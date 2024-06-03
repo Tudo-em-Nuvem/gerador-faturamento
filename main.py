@@ -47,11 +47,11 @@ class Service:
 
           if i in desc.lower():
             plano_encontrado = retorno
-        
+
       else:
         if plano in desc.lower():
           plano_encontrado = retorno
-  
+
     if plano_encontrado == 'Plano não encontrado':
       print(f'Plano não encontrado: {desc}')
 
@@ -72,7 +72,7 @@ class Service:
       cliente = self.cliente_atual_baseado_na_coluna_cliente
       self.rodada_inicial = False
 
-    else: 
+    else:
       print(f'Cliente não encontrado.\nultimo tratado: {self.ultimo_cliente_tratado}\nobs: {desc}\ncliente: {cliente}\ncliente coluna: {self.cliente_atual_baseado_na_coluna_cliente}')  
 
     return cliente
@@ -116,8 +116,7 @@ class Service:
 
       if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): 
         arquivadas = licencas
-      else:
-        ativas = licencas
+      else: ativas = licencas
 
       existe = False
 
