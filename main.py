@@ -78,9 +78,9 @@ class Service:
     return cliente
 
   def define_clientes_omie(self):
-    for ultimo_cliente, licencas, desc, situacao, dia in zip(self.coluna_cliente, 
-                                                        self.coluna_licencas, 
-                                                        self.coluna_desc, 
+    for ultimo_cliente, licencas, desc, situacao, dia in zip(self.coluna_cliente,
+                                                        self.coluna_licencas,
+                                                        self.coluna_desc,
                                                         self.coluna_situacao,
                                                         self.coluna_faturamento):
       if type(ultimo_cliente) == str:
@@ -152,9 +152,9 @@ class Service:
 
   def define_clientes_painel(self):
     for cliente, licencas, produto, status, plano_pagamento in zip(
-                                              self.coluna_cliente_tdn, 
-                                              self.coluna_licencas_tdn, 
-                                              self.coluna_sku_tdn, 
+                                              self.coluna_cliente_tdn,
+                                              self.coluna_licencas_tdn,
+                                              self.coluna_sku_tdn,
                                               self.coluna_status,
                                               self.coluna_plano_pagamento_tdn
                                               ): 
@@ -165,14 +165,14 @@ class Service:
         if cliente == i['dominio']:
           is_a_valid = True
           break
-  
+
       if not is_a_valid: continue
 
       anual = 'sim' if 'annual' in plano_pagamento.lower() else 'não'
 
       existe = False
       for i in self.clientes_painel:
-        
+
         if i['dominio'] == cliente:
 
           if anual == 'sim':
@@ -180,12 +180,12 @@ class Service:
           else:
             i['ativas'] = licencas if 'Archived' not in produto else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
-        
+
           i['status'] = status
           i['produto'] = produto
           existe = True
           break
-  
+
       if not existe:
         self.clientes_painel.append({
           'dominio': cliente,
