@@ -93,6 +93,11 @@ class Service:
 
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = None
+        self.clientes_nao_divergentes.append({'dominio': dominio,
+                                              'licencas omie ativa/arquivada': 'Cliente Microsoft',
+                                              'licencas google ativa/arquivada': 'Cliente Microsoft',
+                                              'produto': 'Cliente Microsoft',
+                                              'status': 'Cliente Microsoft'})
         continue
 
       nao_mensais = 'não'
@@ -214,7 +219,7 @@ class Service:
 
           if omie['nao_mensais'] == 'sim':
             divergencia = True
-            message+= f"Produto não mensal a ser removido | "
+            message += f"Produto não mensal a ser removido | "
 
           if not divergencia and omie['dominio'] not in [i['dominio'] for i in self.clientes_nao_divergentes]:
             self.clientes_nao_divergentes.append({'dominio': omie['dominio'],
