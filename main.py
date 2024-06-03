@@ -1,217 +1,250 @@
+# the ultimate conciliator
+
 import pandas as pd
+import re
 
-for i in range(10):
-  try:
-    dados_omie_excel = pd.read_excel('pivot.xlsx', header=i)
-    coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
-    coluna_licencas = dados_omie_excel['Quantidade'].to_list()
-    coluna_desc = dados_omie_excel['Descrição do Serviço (resumida)'].to_list()
-    coluna_dia_faturamento = dados_omie_excel['Dia de Faturamento do Contrato'].to_list()
-    break
-  except:
-    continue
+class Service:
+  def __init__(self):
+    self.cliente_atual_baseado_na_coluna_cliente = None
+    self.status_atual_baseado_na_coluna_status = None
+    self.ultimo_cliente_tratado = None
+    self.rodada_inicial = False
+    self.ultimo_cliente = None
+    self.clientes_omie = []
+    self.clientes_painel = []
+    self.clientes_divergentes = []
+    self.clientes_nao_divergentes = []
 
-dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
-cliente_atual = None
-ultimo_divergente = False
+    for linha in range(10):
+      try:
+        dados_omie_excel = pd.read_excel('omie.xlsx', header=linha)
+        dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
+        self.coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
+        self.coluna_licencas = dados_omie_excel['Quantidade'].to_list()
+        self.coluna_desc = dados_omie_excel['Descrição do Serviço (completa)'].to_list()
+        self.coluna_faturamento = dados_omie_excel['Dia de Faturamento'].to_list()
+        self.coluna_situacao = dados_omie_excel['Situação'].to_list()
+        linha = linha
+        break
+      except: continue
 
-lista_divergentes = []
-clientes_omie = {}
+    dados_tdn = pd.read_csv('tdn.csv')
+    self.coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
+    self.coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
+    self.coluna_status = dados_tdn['Status da assinatura'].to_list()
+    self.coluna_plano_pagamento_tdn = dados_tdn['Plano de pagamento'].to_list()
+    self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
-for cliente, licencas, dia_faturamento, desc in zip(coluna_cliente, 
-                                                    coluna_licencas, 
-                                                    coluna_dia_faturamento, 
-                                                    coluna_desc):
-  cliente =  str(cliente)
-  desc = str(desc)
+  def extrair_plano(self, desc: str) -> str:
+    PLANOS_NA_DESC = ['starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+                      ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus']
+    RETURN_PLANOS = ['Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
 
-  palavras_workspace = ['workspace', 'business', 'standard', 'starter', 'enterprise', 'plus']
+    plano_encontrado = 'não encontrado'
+    for plano, retorno in zip(PLANOS_NA_DESC, RETURN_PLANOS):
+      if type(plano) == tuple:
+        for i in plano:
 
-  itIsWorkspace = False
-
-  for palavra in palavras_workspace:
-    if palavra in desc.lower() and 'microsoft' not in desc.lower():
-      itIsWorkspace = True
-      break
-
-  if not itIsWorkspace: continue
-
-  if any(char in str(cliente) for char in ['/', '|', '-']) and cliente != 'nan':
-    lista_divergentes.append(cliente)
-    ultimo_divergente = True
-    continue
-
-  if cliente == 'nan' and ultimo_divergente: continue
-
-  else: ultimo_divergente = False
-
-  if cliente_atual is None and cliente != 'nan':
-    ultimo_divergente = False
-    cliente_atual = cliente
-
-  arquivado = False
+          if i in desc.lower():
+            plano_encontrado = retorno
+        
+      else:
+        if plano in desc.lower():
+          plano_encontrado = retorno
   
-  if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): arquivado = True
-  else: arquivado = False
+    if plano_encontrado == 'Plano não encontrado':
+      print(f'Plano não encontrado: {desc}')
 
-  proporcional = False
-  if 'prop' in desc.lower(): proporcional = True
-  else: proporcional = False
+    return plano_encontrado
 
-  if cliente == 'nan' and cliente_atual:
-    ultimo_divergente = False
-    if proporcional:
-      clientes_omie[cliente_atual]['proporcional'] = 'sim'
-      continue
-    elif arquivado:
-      clientes_omie[cliente_atual]['arquivado'] = licencas 
-      continue
-    else:
-      clientes_omie[cliente_atual]['ativo'] = licencas
-      continue
+  def definir_dominio(self, desc) -> str:
+    REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9\-_@]+\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
+    padraoDomain = re.compile(REGEX_DOMAIN)
+    cliente = padraoDomain.search(desc)
 
-  cliente_atual = cliente.lower()
+    if cliente:
+      cliente = cliente.group()
 
-  if proporcional:
-    ultimo_divergente = False
-    clientes_omie[cliente.lower()] = { 
-                                      'ativo': 0, 'arquivado': 0, 
-                                      'produto': desc, 'dia_faturamento': dia_faturamento,
-                                      'proporcional': 'sim'
-                                      }
-    continue
+    elif self.ultimo_cliente_tratado in self.cliente_atual_baseado_na_coluna_cliente:
+      cliente = self.ultimo_cliente_tratado
 
-  elif arquivado:
-    ultimo_divergente = False
-    clientes_omie[cliente.lower()] = { 
-                                      'ativo': 0, 'arquivado': licencas, 
-                                      'produto': desc, 'dia_faturamento': dia_faturamento,
-                                      'proporcional': 'não'
-                                      }
-    continue
+    elif self.rodada_inicial:
+      cliente = self.cliente_atual_baseado_na_coluna_cliente
+      self.rodada_inicial = False
 
-  ultimo_divergente = False
-  clientes_omie[cliente.lower()] = {  
-                                    'ativo': licencas, 'arquivado': 0, 
-                                    'produto': desc, 'dia_faturamento': dia_faturamento,
-                                    'proporcional': 'não'
-                                    }
+    else: 
+      print(f'Cliente não encontrado.\nultimo tratado: {self.ultimo_cliente_tratado}\nobs: {desc}\ncliente: {cliente}\ncliente coluna: {self.cliente_atual_baseado_na_coluna_cliente}')  
 
-lista_sem_duplicatas = []
-[lista_sem_duplicatas.append(item) for item in lista_divergentes if item not in lista_sem_duplicatas]
+    return cliente
 
-dados_tdn = pd.read_csv('tdn.csv')
-coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
-coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
-coluna_produto_tdn = dados_tdn['Produto'].to_list()
-coluna_status = dados_tdn['Status da assinatura'].to_list()
+  def define_clientes_omie(self):
+    for ultimo_cliente, licencas, desc, situacao, dia in zip(self.coluna_cliente, 
+                                                        self.coluna_licencas, 
+                                                        self.coluna_desc, 
+                                                        self.coluna_situacao,
+                                                        self.coluna_faturamento):
+      if type(ultimo_cliente) == str:
+        self.rodada_inicial = True
+        self.cliente_atual_baseado_na_coluna_cliente = ultimo_cliente
+        self.status_atual_baseado_na_coluna_status = situacao
+        self.dia_atual_baseado_na_coluna_faturamento = dia
 
-clientes_tdn = {}
+      dominio = self.definir_dominio(desc)
 
-for cliente, licencas, produto, status in zip(
-                                              coluna_cliente_tdn, 
-                                              coluna_licencas_tdn, 
-                                              coluna_produto_tdn, 
-                                              coluna_status
-                                              ):
-  if cliente.lower() not in clientes_omie: continue
-  if 'Google Workspace' not in produto: continue
-  caso = 'arquivado' if 'Archived' in produto else 'ativo'
-  ativos_e_arquivados = {
-                        'ativo': licencas, 
-                         'arquivado': 0, 
-                         'produto': produto,
-                         'status': status
-                         } if caso == 'ativo' else {
-                                                    'ativo': 0, 
-                                                    'arquivado': licencas, 
-                                                    'produto': produto,
-                                                    'status': status
-                                                    }
+      if 'microsoft' in desc.lower():
+        self.ultimo_cliente_tratado = None
+        continue
 
-  if cliente in clientes_tdn:
-    clientes_tdn[cliente][caso] = licencas
-    continue
+      nao_mensais = 'não'
+      desc: str
 
-  else: clientes_tdn[cliente] = ativos_e_arquivados
+      for i in ['prop', 'migr', 'solici', 'pro rata']:
+        if i in desc.lower():
+          nao_mensais = 'sim'
+          break
 
-clientes_divergentes = []
+      anual = 'sim' if 'anual' in desc.lower() else 'não'
+      situacao = 'Ativa' if self.status_atual_baseado_na_coluna_status == 'Ativo' else 'Suspenso'
+      
+      ativas = 0
+      arquivadas = 0
 
-# Verificar divergências e adicionar informações relevantes à lista
-for i in clientes_omie.keys():
-    i = i.lower()
-    try:
-      if (clientes_omie[i]['arquivado'] != clientes_tdn[i]['arquivado'] or 
-          clientes_omie[i]['ativo'] != clientes_tdn[i]['ativo']):
+      if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): 
+        arquivadas = licencas
+      else:
+        ativas = licencas
+
+      existe = False
+
+      for i in self.clientes_omie:
+        if dominio in i['dominio']:
+
+          if i['produto'] == 'não encontrado':
+            i['produto'] = self.extrair_plano(desc)
+
+          i['ativas'] = ativas if ativas != 0 else i['ativas']
+          i['arquivadas'] = arquivadas if arquivadas != 0 else i['arquivadas']
+          i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
+          i['anual'] = anual if anual != 'não' else i['anual']
+          i['status'] = situacao
+
+          existe = True
+          break
+
+      if not existe:
+        produto = self.extrair_plano(desc)
+        self.clientes_omie.append({
+          'dominio': dominio,
+          'produto': produto,
+          'ativas': ativas,
+          'arquivadas': arquivadas,
+          'nao_mensais': nao_mensais,
+          'anual': anual,
+          'status': situacao,
+          'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
+        })
+
+      self.ultimo_cliente_tratado = dominio
+
+  def define_clientes_painel(self):
+    for cliente, licencas, produto, status, plano_pagamento in zip(
+                                              self.coluna_cliente_tdn, 
+                                              self.coluna_licencas_tdn, 
+                                              self.coluna_sku_tdn, 
+                                              self.coluna_status,
+                                              self.coluna_plano_pagamento_tdn
+                                              ): 
+      is_a_valid = False
+      if 'Identity' in produto: continue
+
+      for i in self.clientes_omie:
+        if cliente == i['dominio']:
+          is_a_valid = True
+          break
+  
+      if not is_a_valid: continue
+
+      anual = 'sim' if 'annual' in plano_pagamento.lower() else 'não'
+
+      existe = False
+      for i in self.clientes_painel:
+        
+        if i['dominio'] == cliente:
+
+          if anual == 'sim':
+            i['ativas'] = licencas
+          else:
+            i['ativas'] = licencas if 'Archived' not in produto else i['ativas']
+            i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
+        
+          i['status'] = status
+          i['produto'] = produto
+          existe = True
+          break
+  
+      if not existe:
+        self.clientes_painel.append({
+          'dominio': cliente,
+          'ativas': licencas if 'Archived' not in produto else 0,
+          'arquivadas': licencas if 'Archived' in produto else 0,
+          'status': status,
+          'produto': produto,
+          'anual': anual
+        })
+
+  def compara_omie_e_painel(self):
+    message = ""
+
+    campos = ['ativas', 'arquivadas', 'status', 'anual']
+    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'anual divergente']
+
+    for painel in self.clientes_painel:
+      for omie in self.clientes_omie:
+        divergencia = False
+
+        if painel['dominio'] == omie['dominio']:
+          for campo, mensagem in zip(campos, mensagens):
+            if painel[campo] != omie[campo]:
+              message+= f"{mensagem} | "
+              divergencia = True
+
+          if  omie['produto'] not in painel['produto'] and painel['produto'] != '-':
+            divergencia = True
+            message+= f"Produto divergente | "
+
+          if omie['nao_mensais'] == 'sim':
+            divergencia = True
+            message+= f"Produto não mensal a ser removido | "
+
+          if not divergencia and omie['dominio'] not in [i['dominio'] for i in self.clientes_nao_divergentes]:
+            self.clientes_nao_divergentes.append({'dominio': omie['dominio'],
+                                                  'licencas omie ativa/arquivada': '{}/{}'.format(omie['ativas'], omie['arquivadas']),
+                                                  'licencas google ativa/arquivada': '{}/{}'.format(painel['ativas'], painel['arquivadas']),
+                                                  'produto': painel['produto'],
+                                                  'status': omie['status']})
+
+        if divergencia:
           cliente_info = {
-              'Cliente': i,
-              'Omie': f'Ativo: {clientes_omie[i]["ativo"]} | Arquivado: {clientes_omie[i]["arquivado"]}',
-              'Painel': f'Ativo: {clientes_tdn[i]["ativo"]} | Arquivado: {clientes_tdn[i]["arquivado"]}',
-              'Dia Faturamento': clientes_omie[i]['dia_faturamento'],
-              'Proporiocnal': clientes_omie[i]['proporcional'],
-              'Status': 'Licenças divergentes',
-              'Status da assinatura': clientes_tdn[i]['status']
+            'dominio': painel['dominio'],
+            'licencas omie ativa/arquivada': '{}/{}'.format(omie['ativas'], omie['arquivadas']),
+            'licencas google ativa/arquivada': '{}/{}'.format(painel['ativas'], painel['arquivadas']),
+            'status omie/google':'{}/{}'.format(omie['status'], painel['status']),
+            'message': message,
+            'dia_faturamento': omie['dia_faturamento'],
           }
 
-          clientes_divergentes.append(cliente_info)
+          message = ''
+          self.clientes_divergentes.append(cliente_info)
 
-      elif clientes_omie[i]['proporcional'] == 'sim':
-        cliente_info = {
-            'Cliente': i,
-            'Omie': f'Ativo: {clientes_omie[i]["ativo"]} | Arquivado: {clientes_omie[i]["arquivado"]}',
-            'Painel': f'Ativo: {clientes_tdn[i]["ativo"]} | Arquivado: {clientes_tdn[i]["arquivado"]}',
-            'Dia Faturamento': clientes_omie[i]['dia_faturamento'],
-            'Proporiocnal': clientes_omie[i]['proporcional'],
-            'Status': 'Proporcional divergente',
-            'Status da assinatura': clientes_tdn[i]['status']
-        }
+    df_divergentes = pd.DataFrame(self.clientes_divergentes)
+    df_divergentes.to_excel('clientes_divergentes.xlsx', index=False)
+    df_nao_divergentes = pd.DataFrame(self.clientes_nao_divergentes)
+    df_nao_divergentes.to_excel('clientes_nao_divergentes.xlsx', index=False)
 
-        clientes_divergentes.append(cliente_info)
+  def main(self):
+    self.define_clientes_omie()
+    self.define_clientes_painel()
+    self.compara_omie_e_painel()
 
-    except:
-      cliente_info = {
-          'Cliente': i,
-          'Omie': f'Ativo: {clientes_omie[i]["ativo"]} | Arquivado: {clientes_omie[i]["arquivado"]}',
-          'Painel': 'Não encontrado',
-          'Dia Faturamento': clientes_omie[i]["dia_faturamento"],
-          'Proporiocnal': clientes_omie[i]['proporcional'],
-          'Status': 'Domínio divergente entre Omie e Painel',
-          'Status da assinatura': 'Não encontrado'
-      }
-
-      clientes_divergentes.append(cliente_info)
-
-for i in lista_divergentes:
-  if i not in clientes_omie:
-    cliente_info = {
-        'Cliente': i,
-        'Omie': 'erro',
-        'Painel': 'erro',
-        'Dia Faturamento': 'erro',
-        'Proporiocnal': 'erro',
-        'Status da assinatura': 'erro',
-        'Status': 'Contrato com mais de um domínio, checar manualmente'
-    }
-
-    clientes_divergentes.append(cliente_info)
-# Criar um DataFrame com as informações dos clientes divergentes
-df_clientes_divergentes = pd.DataFrame(clientes_divergentes)
-
-# Salvar o DataFrame em um arquivo Excel
-df_clientes_divergentes.to_excel('clientes_divergentes.xlsx', index=False)
-
-# Exibir os dados salvos
-print("Arquivo 'clientes_divergentes.xlsx' criado com sucesso!")
-
-def extrairProduto(produto):
-  produtos = ['starter', 'standard', 'plus', 'enterprise', 'enterprise standard', 'enterprise plus']
-  for item in produtos:
-    if item in produto.lower():
-  
-      if item == 'enterprise':
-        if 'standard' in produto.lower():
-          return 'enterprise standard'
-        elif 'plus' in produto.lower():
-          return 'enterprise plus'
-
-      return item
+classe = Service()
+classe.main()
