@@ -240,6 +240,17 @@ class Service:
           message = ''
           self.clientes_divergentes.append(cliente_info)
 
+    clientes_que_nao_estao_no_painel = [i['dominio'] for i in self.clientes_omie if i['dominio'] not in [j['dominio'] for j in self.clientes_painel]]
+
+    for enum, i in enumerate(clientes_que_nao_estao_no_painel):
+      self.clientes_divergentes.append({'dominio': i,
+                                        'licencas omie ativa/arquivada': 'n/a',
+                                        'licencas google ativa/arquivada': 'n/a',
+                                        'status omie/google': 'n/a',
+                                        'message': 'Cliente não encontrado no painel',
+                                        'dia_faturamento': 'n/a'
+                                        })
+
     df_divergentes = pd.DataFrame(self.clientes_divergentes)
     df_divergentes.to_excel('clientes_divergentes.xlsx', index=False)
     df_nao_divergentes = pd.DataFrame(self.clientes_nao_divergentes)
