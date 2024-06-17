@@ -61,7 +61,6 @@ class Service:
     REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9\-_@]+\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
     padraoDomain = re.compile(REGEX_DOMAIN)
     cliente = padraoDomain.search(desc)
-
     if cliente:
       cliente = cliente.group()
 
@@ -90,15 +89,24 @@ class Service:
         self.dia_atual_baseado_na_coluna_faturamento = dia
 
       dominio = self.definir_dominio(desc)
-
+      if dominio == 'fenyx.com.br':
+        print("a")
+  
       if 'microsoft' in desc.lower():
-        self.ultimo_cliente_tratado = None
+        self.ultimo_cliente_tratado = dominio
         self.clientes_nao_divergentes.append({'dominio': dominio,
                                               'licencas omie ativa/arquivada': 'Cliente Microsoft',
                                               'licencas google ativa/arquivada': 'Cliente Microsoft',
                                               'produto': 'Cliente Microsoft',
                                               'status': 'Cliente Microsoft'})
         continue
+
+      microsoft = False
+      for i in self.clientes_nao_divergentes:
+        if dominio in i['dominio']:
+          if i['status'] == 'Cliente Microsoft':
+            microsoft = True
+      if microsoft: continue
 
       nao_mensais = 'não'
       desc: str
