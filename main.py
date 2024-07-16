@@ -7,7 +7,7 @@ class Service:
   def __init__(self):
     self.cliente_atual_baseado_na_coluna_cliente = None
     self.status_atual_baseado_na_coluna_status = None
-    self.ultimo_cliente_tratado = None
+    self.ultimo_cliente_tratado = ''
     self.rodada_inicial = False
     self.ultimo_cliente = None
     self.clientes_omie = []
@@ -58,7 +58,7 @@ class Service:
     return plano_encontrado
 
   def definir_dominio(self, desc) -> str:
-    REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9\-_@]+\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
+    REGEX_DOMAIN = r"\b(?:[a-zA-Z][a-zA-Z0-9\-_@]*\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
     padraoDomain = re.compile(REGEX_DOMAIN)
     cliente = padraoDomain.search(desc)
     if cliente:
@@ -89,8 +89,6 @@ class Service:
         self.dia_atual_baseado_na_coluna_faturamento = dia
 
       dominio = self.definir_dominio(desc)
-      if dominio == 'fenyx.com.br':
-        print("a")
   
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = dominio
@@ -222,7 +220,7 @@ class Service:
 
           if  omie['produto'] not in painel['produto'] and painel['produto'] != '-':
             divergencia = True
-            message+= f"Produto divergente | "
+            message += f"Produto divergente | "
 
           if omie['nao_mensais'] == 'sim':
             divergencia = True
