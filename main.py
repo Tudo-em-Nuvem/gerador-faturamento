@@ -1,5 +1,3 @@
-# the ultimate conciliator
-
 import pandas as pd
 import re
 
@@ -89,7 +87,7 @@ class Service:
         self.dia_atual_baseado_na_coluna_faturamento = dia
 
       dominio = self.definir_dominio(desc)
-  
+
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = dominio
         self.clientes_nao_divergentes.append({'dominio': dominio,
@@ -114,14 +112,19 @@ class Service:
           nao_mensais = 'sim'
           break
 
+      if 'support' in desc.lower():
+        nao_mensais = 'sim'
+
       anual = 'sim' if 'anual' in desc.lower() else 'não'
       situacao = 'Ativa' if self.status_atual_baseado_na_coluna_status == 'Ativo' else 'Suspenso'
-      
+
       ativas = 0
       arquivadas = 0
 
       if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): 
         arquivadas = licencas
+      elif 'supor' in desc.lower():
+        pass
       else: ativas = licencas
 
       existe = False
@@ -183,6 +186,7 @@ class Service:
 
           if anual == 'sim':
             i['ativas'] = licencas
+
           else:
             i['ativas'] = licencas if 'Archived' not in produto else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
@@ -203,14 +207,18 @@ class Service:
         })
 
   def compara_omie_e_painel(self):
+    dias_faturamento = []
     message = ""
 
-    campos = ['ativas', 'arquivadas', 'status', 'anual']
+    campos =    ['ativas',               'arquivadas',           'status',            'anual']
     mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'anual divergente']
 
     for painel in self.clientes_painel:
+
       for omie in self.clientes_omie:
+
         divergencia = False
+        dias_faturamento.append(int(omie['dia_faturamento'])) if omie['dia_faturamento'] not in dias_faturamento else None
 
         if painel['dominio'] == omie['dominio']:
           for campo, mensagem in zip(campos, mensagens):
@@ -258,9 +266,15 @@ class Service:
                                         })
 
     df_divergentes = pd.DataFrame(self.clientes_divergentes)
-    df_divergentes.to_excel('clientes_divergentes.xlsx', index=False)
     df_nao_divergentes = pd.DataFrame(self.clientes_nao_divergentes)
-    df_nao_divergentes.to_excel('clientes_nao_divergentes.xlsx', index=False)
+
+    name_arquivo = ''
+    for day in dias_faturamento:
+      name_arquivo += f'{day} '
+
+    with pd.ExcelWriter(f'{name_arquivo.strip()}.xlsx') as writer:
+      df_divergentes.to_excel(writer, sheet_name='Divergentes', index=False)
+      df_nao_divergentes.to_excel(writer, sheet_name='Não Divergentes', index=False)
 
   def main(self):
     self.define_clientes_omie()
