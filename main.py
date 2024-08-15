@@ -56,7 +56,7 @@ class Service:
     return plano_encontrado
 
   def definir_dominio(self, desc) -> str:
-    REGEX_DOMAIN = r"\b(?:[a-zA-Z][a-zA-Z0-9\-_@]*\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
+    REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9][a-zA-Z0-9\-_@]*\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
     padraoDomain = re.compile(REGEX_DOMAIN)
     cliente = padraoDomain.search(desc)
     if cliente:
@@ -160,15 +160,13 @@ class Service:
       self.ultimo_cliente_tratado = dominio
 
   def define_clientes_painel(self):
-    for cliente, licencas, produto, status, plano_pagamento in zip(
-                                              self.coluna_cliente_tdn,
-                                              self.coluna_licencas_tdn,
-                                              self.coluna_sku_tdn,
-                                              self.coluna_status,
-                                              self.coluna_plano_pagamento_tdn
+    for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
+        self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
                                               ): 
       is_a_valid = False
+
       if 'Identity' in produto: continue
+      if 'AppSheet' in produto: continue
 
       for i in self.clientes_omie:
         if cliente == i['dominio']:
@@ -269,7 +267,7 @@ class Service:
     df_nao_divergentes = pd.DataFrame(self.clientes_nao_divergentes)
 
     name_arquivo = ''
-    for day in dias_faturamento:
+    for day in sorted(dias_faturamento):
       name_arquivo += f'{day} '
 
     with pd.ExcelWriter(f'{name_arquivo.strip()}.xlsx') as writer:
