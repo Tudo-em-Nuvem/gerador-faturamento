@@ -130,7 +130,7 @@ class Service:
       existe = False
 
       for i in self.clientes_omie:
-        if dominio in i['dominio']:
+        if dominio == i['dominio']:
 
           if i['produto'] == 'não encontrado':
             i['produto'] = self.extrair_plano(desc)
