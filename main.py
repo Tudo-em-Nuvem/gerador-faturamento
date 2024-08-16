@@ -58,9 +58,15 @@ class Service:
   def definir_dominio(self, desc) -> str:
     REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9][a-zA-Z0-9\-_@]*\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
     padraoDomain = re.compile(REGEX_DOMAIN)
-    cliente = padraoDomain.search(desc)
-    if cliente:
-      cliente = cliente.group()
+    resultados = padraoDomain.findall(desc)
+
+    if len(resultados) > 1:
+      cliente = resultados[0]
+      if self.eh_float(cliente):
+        cliente = resultados[1]
+  
+    elif len(resultados) == 1:
+      cliente = resultados[0]
 
     elif self.ultimo_cliente_tratado in self.cliente_atual_baseado_na_coluna_cliente:
       cliente = self.ultimo_cliente_tratado
@@ -107,7 +113,7 @@ class Service:
       nao_mensais = 'não'
       desc: str
 
-      for i in ['prop', 'migr', 'solici', 'pro rata']:
+      for i in ['proporc', 'migraç', 'solicitação', 'pro rata']:
         if i in desc.lower():
           nao_mensais = 'sim'
           break
@@ -130,24 +136,24 @@ class Service:
       existe = False
 
       for i in self.clientes_omie:
-        if dominio == i['dominio']:
+        if dominio.lower() == i['dominio'].lower():
 
           if i['produto'] == 'não encontrado':
             i['produto'] = self.extrair_plano(desc)
 
-          i['ativas'] = ativas if ativas != 0 else i['ativas']
+          i['ativas'] = ativas if ativas != 0 and self.extrair_plano(desc) != 'não encontrado' else i['ativas']
           i['arquivadas'] = arquivadas if arquivadas != 0 else i['arquivadas']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
           i['anual'] = anual if anual != 'não' else i['anual']
           i['status'] = situacao
-
           existe = True
           break
 
       if not existe:
         produto = self.extrair_plano(desc)
-        self.clientes_omie.append({
-          'dominio': dominio,
+
+        item = {
+          'dominio': dominio.lower(),
           'produto': produto,
           'ativas': ativas,
           'arquivadas': arquivadas,
@@ -155,7 +161,9 @@ class Service:
           'anual': anual,
           'status': situacao,
           'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
-        })
+        }
+
+        self.clientes_omie.append(item)
 
       self.ultimo_cliente_tratado = dominio
 
@@ -252,9 +260,9 @@ class Service:
           message = ''
           self.clientes_divergentes.append(cliente_info)
 
-    clientes_que_nao_estao_no_painel = [i['dominio'] for i in self.clientes_omie if i['dominio'] not in [j['dominio'] for j in self.clientes_painel]]
+    clientes_que_nao_estao_no_painel = [i['dominio'].lower() for i in self.clientes_omie if i['dominio'].lower() not in [j['dominio'].lower() for j in self.clientes_painel]]
 
-    for enum, i in enumerate(clientes_que_nao_estao_no_painel):
+    for i in clientes_que_nao_estao_no_painel:
       self.clientes_divergentes.append({'dominio': i,
                                         'licencas omie ativa/arquivada': 'n/a',
                                         'licencas google ativa/arquivada': 'n/a',
@@ -274,6 +282,22 @@ class Service:
       df_divergentes.to_excel(writer, sheet_name='Divergentes', index=False)
       df_nao_divergentes.to_excel(writer, sheet_name='Não Divergentes', index=False)
 
+  def eh_float(self, valor):
+    """Verifica se uma string pode ser convertida em um float.
+
+    Args:
+      valor: A string a ser verificada.
+
+    Returns:
+      True se a string representar um float, False caso contrário.
+    """
+
+    try:
+      float(valor)
+      return True
+    except ValueError:
+      return False
+  
   def main(self):
     self.define_clientes_omie()
     self.define_clientes_painel()
