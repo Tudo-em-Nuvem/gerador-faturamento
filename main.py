@@ -248,6 +248,9 @@ class Service:
                                                   'status': omie['status']})
 
         if divergencia:
+          if len([cliente for cliente in self.clientes_nao_divergentes if cliente['dominio'] == painel['dominio']]) > 0:
+            self.clientes_nao_divergentes = [cliente for cliente in self.clientes_nao_divergentes if cliente['dominio'] != painel['dominio']]
+
           cliente_info = {
             'dominio': painel['dominio'],
             'licencas omie ativa/arquivada': '{}/{}'.format(omie['ativas'], omie['arquivadas']),
@@ -282,7 +285,7 @@ class Service:
       df_divergentes.to_excel(writer, sheet_name='Divergentes', index=False)
       df_nao_divergentes.to_excel(writer, sheet_name='Não Divergentes', index=False)
 
-  def eh_float(self, valor):
+  def eh_float(self, valor: str):
     """Verifica se uma string pode ser convertida em um float.
 
     Args:
@@ -301,7 +304,7 @@ class Service:
   def main(self):
     self.define_clientes_omie()
     self.define_clientes_painel()
-    self.compara_omie_e_painel()
+    self.compara_omie_e_painel() 
 
 classe = Service()
 classe.main()
