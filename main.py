@@ -121,7 +121,6 @@ class Service:
       if 'support' in desc.lower():
         nao_mensais = 'sim'
 
-      anual = 'sim' if 'anual' in desc.lower() else 'não'
       situacao = 'Ativa' if self.status_atual_baseado_na_coluna_status == 'Ativo' else 'Suspenso'
 
       ativas = 0
@@ -144,7 +143,6 @@ class Service:
           i['ativas'] = ativas if ativas != 0 and self.extrair_plano(desc) != 'não encontrado' else i['ativas']
           i['arquivadas'] = arquivadas if arquivadas != 0 else i['arquivadas']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
-          i['anual'] = anual if anual != 'não' else i['anual']
           i['status'] = situacao
           existe = True
           break
@@ -158,7 +156,6 @@ class Service:
           'ativas': ativas,
           'arquivadas': arquivadas,
           'nao_mensais': nao_mensais,
-          'anual': anual,
           'status': situacao,
           'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
         }
@@ -208,16 +205,15 @@ class Service:
           'ativas': licencas if 'Archived' not in produto else 0,
           'arquivadas': licencas if 'Archived' in produto else 0,
           'status': status,
-          'produto': produto,
-          'anual': anual
+          'produto': produto
         })
 
   def compara_omie_e_painel(self):
     dias_faturamento = []
     message = ""
 
-    campos =    ['ativas',               'arquivadas',           'status',            'anual']
-    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'anual divergente']
+    campos =    ['ativas',               'arquivadas',           'status']
+    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente']
 
     for painel in self.clientes_painel:
 
