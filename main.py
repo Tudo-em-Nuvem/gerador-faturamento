@@ -140,8 +140,8 @@ class Service:
           if i['produto'] == 'não encontrado':
             i['produto'] = self.extrair_plano(desc)
 
-          i['ativas'] = ativas if ativas != 0 and self.extrair_plano(desc) != 'não encontrado' else i['ativas']
-          i['arquivadas'] = arquivadas if arquivadas != 0 else i['arquivadas']
+          i['ativas'] = i['ativas'] + ativas if ativas != 0 and self.extrair_plano(desc) != 'não encontrado' else i['ativas']
+          i['arquivadas'] = i['arquivadas'] + arquivadas if arquivadas != 0 else i['arquivadas']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
           i['status'] = situacao
           existe = True
