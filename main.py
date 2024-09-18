@@ -34,26 +34,22 @@ class Service:
     self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
   def extrair_plano(self, desc: str) -> str:
-    PLANOS_NA_DESC = ['starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+    PLANOS_NA_DESC = ['appsheet', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
                       ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus']
-    RETURN_PLANOS = ['Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
+    RETURN_PLANOS = ['AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
 
-    plano_encontrado = 'não encontrado'
     for plano, retorno in zip(PLANOS_NA_DESC, RETURN_PLANOS):
       if type(plano) == tuple:
         for i in plano:
 
           if i in desc.lower():
-            plano_encontrado = retorno
+            return retorno
 
       else:
         if plano in desc.lower():
-          plano_encontrado = retorno
-
-    if plano_encontrado == 'Plano não encontrado':
-      print(f'Plano não encontrado: {desc}')
-
-    return plano_encontrado
+          return retorno
+    # print(f'Plano não encontrado: {desc}')
+    return 'não encontrado'
 
   def definir_dominio(self, desc) -> str:
     REGEX_DOMAIN = r"\b(?:[a-zA-Z0-9][a-zA-Z0-9\-_@]*\.)+(?:xn--[a-zA-Z0-9]+|[a-zA-Z0-9]{2,}|[a-zA-Z0-9]{2}\.[a-zA-Z0-9]{2})\b"
@@ -93,7 +89,6 @@ class Service:
         self.dia_atual_baseado_na_coluna_faturamento = dia
 
       dominio = self.definir_dominio(desc)
-
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = dominio
         self.clientes_nao_divergentes.append({'dominio': dominio,
@@ -118,9 +113,6 @@ class Service:
           nao_mensais = 'sim'
           break
 
-      if 'support' in desc.lower():
-        nao_mensais = 'sim'
-
       situacao = 'Ativa' if self.status_atual_baseado_na_coluna_status == 'Ativo' else 'Suspenso'
 
       ativas = 0
@@ -128,33 +120,38 @@ class Service:
 
       if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): 
         arquivadas = licencas
-      elif 'supor' in desc.lower():
-        pass
-      else: ativas = licencas
+      else:
+        suporte = False
+        for i in desc.split(' '):
+          if 'suporte' == i:
+            suporte = True
+
+        ativas = licencas if not suporte else 0
 
       existe = False
 
+      produto = self.extrair_plano(desc)
+
       for i in self.clientes_omie:
         if dominio.lower() == i['dominio'].lower():
-
           if i['produto'] == 'não encontrado':
-            i['produto'] = self.extrair_plano(desc)
+            i['produto'] = produto if produto != 'não encontrado' and produto != 'AppSheet' else i['produto']
 
-          i['ativas'] = i['ativas'] + ativas if ativas != 0 and self.extrair_plano(desc) != 'não encontrado' else i['ativas']
+          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet'] else i['ativas']
           i['arquivadas'] = i['arquivadas'] + arquivadas if arquivadas != 0 else i['arquivadas']
+          i['appSheet'] = i['appSheet'] + ativas if produto == 'AppSheet' else i['appSheet']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
           i['status'] = situacao
           existe = True
           break
 
       if not existe:
-        produto = self.extrair_plano(desc)
-
         item = {
           'dominio': dominio.lower(),
           'produto': produto,
-          'ativas': ativas,
+          'ativas': ativas if produto != 'AppSheet' else 0,
           'arquivadas': arquivadas,
+          'appSheet': ativas if produto == 'AppSheet' else 0,
           'nao_mensais': nao_mensais,
           'status': situacao,
           'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
@@ -171,7 +168,6 @@ class Service:
       is_a_valid = False
 
       if 'Identity' in produto: continue
-      if 'AppSheet' in produto: continue
 
       for i in self.clientes_omie:
         if cliente == i['dominio']:
@@ -191,7 +187,7 @@ class Service:
             i['ativas'] = licencas
 
           else:
-            i['ativas'] = licencas if 'Archived' not in produto else i['ativas']
+            i['ativas'] = licencas if 'Archived' not in produto and 'AppSheet' not in produto else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
 
           i['status'] = status
@@ -202,8 +198,9 @@ class Service:
       if not existe:
         self.clientes_painel.append({
           'dominio': cliente,
-          'ativas': licencas if 'Archived' not in produto else 0,
+          'ativas': licencas if produto not in ['Archived', 'AppSheet'] else 0,
           'arquivadas': licencas if 'Archived' in produto else 0,
+          'appSheet': licencas if 'AppSheet' in produto else 0,
           'status': status,
           'produto': produto
         })
@@ -212,8 +209,8 @@ class Service:
     dias_faturamento = []
     message = ""
 
-    campos =    ['ativas',               'arquivadas',           'status']
-    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente']
+    campos =    ['ativas',               'arquivadas',           'status',            'appSheet']
+    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'AppSheet divergente']
 
     for painel in self.clientes_painel:
 
