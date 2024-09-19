@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import re
 
@@ -13,42 +14,50 @@ class Service:
     self.clientes_divergentes = []
     self.clientes_nao_divergentes = []
 
-    for linha in range(10):
-      try:
-        dados_omie_excel = pd.read_excel('omie.xlsx', header=linha)
-        dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
-        self.coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
-        self.coluna_licencas = dados_omie_excel['Quantidade'].to_list()
-        self.coluna_desc = dados_omie_excel['Descrição do Serviço (completa)'].to_list()
-        self.coluna_faturamento = dados_omie_excel['Dia de Faturamento'].to_list()
-        self.coluna_situacao = dados_omie_excel['Situação'].to_list()
-        linha = linha
-        break
-      except: continue
+    for i in os.listdir('./planilhas'):
+      if str(i).endswith('.xlsx'):
+        for linha in range(10):
 
-    dados_tdn = pd.read_csv('tdn.csv')
-    self.coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
-    self.coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
-    self.coluna_status = dados_tdn['Status da assinatura'].to_list()
-    self.coluna_plano_pagamento_tdn = dados_tdn['Plano de pagamento'].to_list()
-    self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
+          try:
+            dados_omie_excel = pd.read_excel(f'planilhas/{str(i)}', header=linha)
+            dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
+            self.coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
+            self.coluna_licencas = dados_omie_excel['Quantidade'].to_list()
+            self.coluna_desc = dados_omie_excel['Descrição do Serviço (completa)'].to_list()
+            self.coluna_faturamento = dados_omie_excel['Dia de Faturamento'].to_list()
+            self.coluna_situacao = dados_omie_excel['Situação'].to_list()
+
+          except: continue
+
+    for i in os.listdir('./planilhas'):
+      if str(i).endswith('.csv'):
+        dados_tdn = pd.read_csv(f'planilhas/{str(i)}')
+
+        self.coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
+        self.coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
+        self.coluna_status = dados_tdn['Status da assinatura'].to_list()
+        self.coluna_plano_pagamento_tdn = dados_tdn['Plano de pagamento'].to_list()
+        self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
   def extrair_plano(self, desc: str) -> str:
-    PLANOS_NA_DESC = ['appsheet', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+    PLANOS_NA_DESC = ['cloud identity premium', 'appsheet', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
                       ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus']
-    RETURN_PLANOS = ['AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
+    RETURN_PLANOS = ['Cloud Identity Premium', 'AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
+
+    return_plano = None
 
     for plano, retorno in zip(PLANOS_NA_DESC, RETURN_PLANOS):
       if type(plano) == tuple:
         for i in plano:
 
           if i in desc.lower():
-            return retorno
+            return_plano = retorno
 
       else:
         if plano in desc.lower():
-          return retorno
-    # print(f'Plano não encontrado: {desc}')
+          return_plano = retorno
+
+    if return_plano: return return_plano
     return 'não encontrado'
 
   def definir_dominio(self, desc) -> str:
@@ -103,6 +112,7 @@ class Service:
         if dominio in i['dominio']:
           if i['status'] == 'Cliente Microsoft':
             microsoft = True
+
       if microsoft: continue
 
       nao_mensais = 'não'
@@ -135,10 +145,11 @@ class Service:
       for i in self.clientes_omie:
         if dominio.lower() == i['dominio'].lower():
           if i['produto'] == 'não encontrado':
-            i['produto'] = produto if produto != 'não encontrado' and produto != 'AppSheet' else i['produto']
+            i['produto'] = produto if produto != 'não encontrado' and produto != 'AppSheet' else i['produto'] and produto != 'Cloud Identity Premium'
 
-          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet'] else i['ativas']
+          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium'] else i['ativas']
           i['arquivadas'] = i['arquivadas'] + arquivadas if arquivadas != 0 else i['arquivadas']
+          i['cloudIdentity'] = i['cloudIdentity'] + ativas if produto == 'Cloud Identity Premium' else i['cloudIdentity']
           i['appSheet'] = i['appSheet'] + ativas if produto == 'AppSheet' else i['appSheet']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
           i['status'] = situacao
@@ -149,8 +160,9 @@ class Service:
         item = {
           'dominio': dominio.lower(),
           'produto': produto,
-          'ativas': ativas if produto != 'AppSheet' else 0,
+          'ativas': ativas if produto != 'AppSheet'and produto != 'Cloud Identity Premium' else 0,
           'arquivadas': arquivadas,
+          'cloudIdentity': ativas if produto == 'Cloud Identity Premium' else 0,
           'appSheet': ativas if produto == 'AppSheet' else 0,
           'nao_mensais': nao_mensais,
           'status': situacao,
@@ -167,7 +179,7 @@ class Service:
                                               ): 
       is_a_valid = False
 
-      if 'Identity' in produto: continue
+      if produto == 'Cloud Identity Free': continue
 
       for i in self.clientes_omie:
         if cliente == i['dominio']:
@@ -187,7 +199,7 @@ class Service:
             i['ativas'] = licencas
 
           else:
-            i['ativas'] = licencas if 'Archived' not in produto and 'AppSheet' not in produto else i['ativas']
+            i['ativas'] = licencas if 'Archived' not in produto and produto not in ['AppSheet', 'Cloud Identity Premium'] else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
 
           i['status'] = status
@@ -198,8 +210,9 @@ class Service:
       if not existe:
         self.clientes_painel.append({
           'dominio': cliente,
-          'ativas': licencas if produto not in ['Archived', 'AppSheet'] else 0,
+          'ativas': licencas if produto not in ['Archived', 'AppSheet', 'Cloud Identity Premium'] else 0,
           'arquivadas': licencas if 'Archived' in produto else 0,
+          'cloudIdentity': licencas if 'Cloud Identity Premium' in produto else 0,
           'appSheet': licencas if 'AppSheet' in produto else 0,
           'status': status,
           'produto': produto
@@ -209,8 +222,8 @@ class Service:
     dias_faturamento = []
     message = ""
 
-    campos =    ['ativas',               'arquivadas',           'status',            'appSheet']
-    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'AppSheet divergente']
+    campos =    ['ativas',               'arquivadas',           'status',            'appSheet',           'cloudIdentity']
+    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'AppSheet divergente', 'Cloud Identity divergente']
 
     for painel in self.clientes_painel:
 
