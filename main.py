@@ -176,7 +176,7 @@ class Service:
   def define_clientes_painel(self):
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
-                                              ): 
+        ): 
       is_a_valid = False
 
       if produto == 'Cloud Identity Free': continue
