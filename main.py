@@ -87,10 +87,11 @@ class Service:
 
   def define_clientes_omie(self):
     for ultimo_cliente, licencas, desc, situacao, dia in zip(self.coluna_cliente,
-                                                        self.coluna_licencas,
-                                                        self.coluna_desc,
-                                                        self.coluna_situacao,
-                                                        self.coluna_faturamento):
+                                                             self.coluna_licencas,
+                                                             self.coluna_desc,
+                                                             self.coluna_situacao,
+                                                             self.coluna_faturamento):
+
       if type(ultimo_cliente) == str:
         self.rodada_inicial = True
         self.cliente_atual_baseado_na_coluna_cliente = ultimo_cliente
@@ -98,6 +99,7 @@ class Service:
         self.dia_atual_baseado_na_coluna_faturamento = dia
 
       dominio = self.definir_dominio(desc)
+
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = dominio
         self.clientes_nao_divergentes.append({'dominio': dominio,
@@ -108,6 +110,7 @@ class Service:
         continue
 
       microsoft = False
+
       for i in self.clientes_nao_divergentes:
         if dominio in i['dominio']:
           if i['status'] == 'Cliente Microsoft':
@@ -130,6 +133,7 @@ class Service:
 
       if ('arquivado' in desc.lower()) or ('arquivada' in desc.lower()): 
         arquivadas = licencas
+
       else:
         suporte = False
         for i in desc.split(' '):
@@ -143,6 +147,7 @@ class Service:
       produto = self.extrair_plano(desc)
 
       for i in self.clientes_omie:
+
         if dominio.lower() == i['dominio'].lower():
           if i['produto'] == 'não encontrado':
             i['produto'] = produto if produto != 'não encontrado' and produto != 'AppSheet' else i['produto'] and produto != 'Cloud Identity Premium'
@@ -176,7 +181,8 @@ class Service:
   def define_clientes_painel(self):
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
-        ): 
+        ):
+
       is_a_valid = False
 
       if produto == 'Cloud Identity Free': continue
@@ -306,7 +312,7 @@ class Service:
       return True
     except ValueError:
       return False
-  
+
   def main(self):
     self.define_clientes_omie()
     self.define_clientes_painel()
