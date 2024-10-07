@@ -41,8 +41,8 @@ class Service:
 
   def extrair_plano(self, desc: str) -> str:
     PLANOS_NA_DESC = ['cloud identity premium', 'appsheet', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
-                      ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus']
-    RETURN_PLANOS = ['Cloud Identity Premium', 'AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus']
+                      ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus', ('valt', 'vault')]
+    RETURN_PLANOS = ['Cloud Identity Premium', 'AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus', 'Google Vault']
 
     return_plano = None
 
@@ -150,12 +150,13 @@ class Service:
 
         if dominio.lower() == i['dominio'].lower():
           if i['produto'] == 'não encontrado':
-            i['produto'] = produto if produto != 'não encontrado' and produto != 'AppSheet' else i['produto'] and produto != 'Cloud Identity Premium'
+            i['produto'] = produto if produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
 
-          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium'] else i['ativas']
+          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['ativas']
           i['arquivadas'] = i['arquivadas'] + arquivadas if arquivadas != 0 else i['arquivadas']
           i['cloudIdentity'] = i['cloudIdentity'] + ativas if produto == 'Cloud Identity Premium' else i['cloudIdentity']
           i['appSheet'] = i['appSheet'] + ativas if produto == 'AppSheet' else i['appSheet']
+          i['vault'] = i['vault'] + ativas if produto == 'Google Vault' else i['vault']
           i['nao_mensais'] = nao_mensais if nao_mensais != 'não' else i['nao_mensais']
           i['status'] = situacao
           existe = True
@@ -164,11 +165,12 @@ class Service:
       if not existe:
         item = {
           'dominio': dominio.lower(),
-          'produto': produto,
-          'ativas': ativas if produto != 'AppSheet'and produto != 'Cloud Identity Premium' else 0,
+          'produto': produto if produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else 'não encontrado',
+          'ativas': ativas if produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else 0,
           'arquivadas': arquivadas,
           'cloudIdentity': ativas if produto == 'Cloud Identity Premium' else 0,
           'appSheet': ativas if produto == 'AppSheet' else 0,
+          'vault': ativas if produto == 'Google Vault' else 0,
           'nao_mensais': nao_mensais,
           'status': situacao,
           'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
@@ -182,10 +184,9 @@ class Service:
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
         ):
-
       is_a_valid = False
 
-      if produto == 'Cloud Identity Free': continue
+      if produto in ['Cloud Identity Free']: continue
 
       for i in self.clientes_omie:
         if cliente == i['dominio']:
@@ -205,11 +206,16 @@ class Service:
             i['ativas'] = licencas
 
           else:
-            i['ativas'] = licencas if 'Archived' not in produto and produto not in ['AppSheet', 'Cloud Identity Premium'] else i['ativas']
+            i['ativas'] = licencas if 'Archived' not in produto and produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
 
           i['status'] = status
-          i['produto'] = produto
+          i['produto'] = produto if produto not in ['Archived', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
+          
+          i['cloudIdentity'] = licencas if 'Cloud Identity Premium' in produto else i['cloudIdentity']
+          i['appSheet'] = licencas if 'AppSheet' in produto else i['appSheet']
+          i['vault'] = licencas if 'Google Vault' in produto else i['vault']
+
           existe = True
           break
 
@@ -220,6 +226,7 @@ class Service:
           'arquivadas': licencas if 'Archived' in produto else 0,
           'cloudIdentity': licencas if 'Cloud Identity Premium' in produto else 0,
           'appSheet': licencas if 'AppSheet' in produto else 0,
+          'vault': licencas if 'Google Vault' in produto else 0,
           'status': status,
           'produto': produto
         })
@@ -228,8 +235,8 @@ class Service:
     dias_faturamento = []
     message = ""
 
-    campos =    ['ativas',               'arquivadas',           'status',            'appSheet',           'cloudIdentity']
-    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'AppSheet divergente', 'Cloud Identity divergente']
+    campos =    ['ativas',               'arquivadas',           'status',            'appSheet',            'cloudIdentity',            'vault']
+    mensagens = ['licenças divergentes', 'licenças divergentes', 'status divergente', 'AppSheet divergente', 'Cloud Identity divergente', 'Vault Divergente']
 
     for painel in self.clientes_painel:
 
