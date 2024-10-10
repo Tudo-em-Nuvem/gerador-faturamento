@@ -40,9 +40,9 @@ class Service:
         self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
   def extrair_plano(self, desc: str) -> str:
-    PLANOS_NA_DESC = ['cloud identity premium', 'appsheet', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
-                      ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus', ('valt', 'vault')]
-    RETURN_PLANOS = ['Cloud Identity Premium', 'AppSheet', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus', 'Google Vault']
+    PLANOS_NA_DESC = ['cloud identity premium', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+                      ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus', ('valt', 'vault'), 'appsheet']
+    RETURN_PLANOS = ['Cloud Identity Premium', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus', 'Google Vault', 'AppSheet']
 
     return_plano = None
 
@@ -179,14 +179,13 @@ class Service:
         self.clientes_omie.append(item)
 
       self.ultimo_cliente_tratado = dominio
-
   def define_clientes_painel(self):
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
         ):
       is_a_valid = False
 
-      if produto in ['Cloud Identity Free']: continue
+      if produto in ['Cloud Identity Free', 'Enterprise Data Regions']: continue
 
       for i in self.clientes_omie:
         if cliente == i['dominio']:
@@ -206,11 +205,11 @@ class Service:
             i['ativas'] = licencas
 
           else:
-            i['ativas'] = licencas if 'Archived' not in produto and produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['ativas']
+            i['ativas'] = licencas if 'Archived' not in produto and produto not in ['AppSheet Enterprise Plus', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['ativas']
             i['arquivadas'] = licencas if 'Archived' in produto else i['arquivadas']
 
           i['status'] = status
-          i['produto'] = produto if produto not in ['Archived', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
+          i['produto'] = produto if produto not in ['AppSheet Enterprise Plus', 'Archived', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
           
           i['cloudIdentity'] = licencas if 'Cloud Identity Premium' in produto else i['cloudIdentity']
           i['appSheet'] = licencas if 'AppSheet' in produto else i['appSheet']
@@ -218,7 +217,7 @@ class Service:
 
           existe = True
           break
-
+      if cliente == 'williamjuniorfotografia.com.br': print(produto)
       if not existe:
         self.clientes_painel.append({
           'dominio': cliente,
