@@ -40,7 +40,7 @@ class Service:
         self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
   def extrair_plano(self, desc: str) -> str:
-    PLANOS_NA_DESC = ['cloud identity premium', 'starter', ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+    PLANOS_NA_DESC = ['cloud identity premium', ('stater', 'starter'), ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
                       ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus', ('valt', 'vault'), 'appsheet']
     RETURN_PLANOS = ['Cloud Identity Premium', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus', 'Google Vault', 'AppSheet']
 
@@ -102,21 +102,13 @@ class Service:
 
       if 'microsoft' in desc.lower():
         self.ultimo_cliente_tratado = dominio
-        self.clientes_nao_divergentes.append({'dominio': dominio,
-                                              'licencas omie ativa/arquivada': 'Cliente Microsoft',
-                                              'licencas google ativa/arquivada': 'Cliente Microsoft',
-                                              'produto': 'Cliente Microsoft',
-                                              'status': 'Cliente Microsoft'})
+        if dominio not in [i['dominio'] for i in self.clientes_nao_divergentes] and dominio not in [i['dominio'] for i in self.clientes_divergentes]:
+          self.clientes_nao_divergentes.append({'dominio': dominio,
+                                                'licencas omie ativa/arquivada': 'Cliente Microsoft',
+                                                'licencas google ativa/arquivada': 'Cliente Microsoft',
+                                                'produto': 'Cliente Microsoft',
+                                                'status': 'Cliente Microsoft'})
         continue
-
-      microsoft = False
-
-      for i in self.clientes_nao_divergentes:
-        if dominio in i['dominio']:
-          if i['status'] == 'Cliente Microsoft':
-            microsoft = True
-
-      if microsoft: continue
 
       nao_mensais = 'não'
       desc: str
@@ -125,6 +117,26 @@ class Service:
         if i in desc.lower():
           nao_mensais = 'sim'
           break
+
+      microsoft = False
+
+      for i in self.clientes_nao_divergentes:
+        if dominio in i['dominio']:
+          if i['status'] == 'Cliente Microsoft':
+            microsoft = True
+
+      if microsoft and nao_mensais == 'sim':
+        self.clientes_nao_divergentes = [i for i in self.clientes_nao_divergentes if i['dominio'] != dominio]
+        self.clientes_divergentes.append({
+          'dominio': dominio,
+          'licencas omie ativa/arquivada': 'Cliente Microsoft',
+          'licencas google ativa/arquivada': 'Cliente Microsoft',
+          'status omie/google': 'Cliente Microsoft',
+          'message': "Não mensal a ser removido",
+          'dia_faturamento':self.dia_atual_baseado_na_coluna_faturamento,
+        })
+
+        continue
 
       situacao = 'Ativa' if self.status_atual_baseado_na_coluna_status == 'Ativo' else 'Suspenso'
 
@@ -147,7 +159,6 @@ class Service:
       produto = self.extrair_plano(desc)
 
       for i in self.clientes_omie:
-
         if dominio.lower() == i['dominio'].lower():
           if i['produto'] == 'não encontrado':
             i['produto'] = produto if produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
@@ -179,6 +190,7 @@ class Service:
         self.clientes_omie.append(item)
 
       self.ultimo_cliente_tratado = dominio
+ 
   def define_clientes_painel(self):
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
@@ -217,7 +229,7 @@ class Service:
 
           existe = True
           break
-      if cliente == 'williamjuniorfotografia.com.br': print(produto)
+
       if not existe:
         self.clientes_painel.append({
           'dominio': cliente,
@@ -282,6 +294,8 @@ class Service:
           self.clientes_divergentes.append(cliente_info)
 
     clientes_que_nao_estao_no_painel = [i['dominio'].lower() for i in self.clientes_omie if i['dominio'].lower() not in [j['dominio'].lower() for j in self.clientes_painel]]
+    clientes_que_nao_estao_no_painel = [i for i in clientes_que_nao_estao_no_painel if i not in [j['dominio'] for j in self.clientes_divergentes]]
+    clientes_que_nao_estao_no_painel = [i for i in clientes_que_nao_estao_no_painel if i not in [j['dominio'] for j in self.clientes_nao_divergentes]]
 
     for i in clientes_que_nao_estao_no_painel:
       self.clientes_divergentes.append({'dominio': i,
