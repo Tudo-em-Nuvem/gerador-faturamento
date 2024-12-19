@@ -26,8 +26,7 @@ class Service:
             self.coluna_desc = dados_omie_excel['Descrição do Serviço (completa)'].to_list()
             self.coluna_faturamento = dados_omie_excel['Dia de Faturamento'].to_list()
             self.coluna_situacao = dados_omie_excel['Situação'].to_list()
-
-          except: continue
+          except Exception as e: pass
 
     for i in os.listdir('./planilhas'):
       if str(i).endswith('.csv'):
@@ -40,7 +39,7 @@ class Service:
         self.coluna_sku_tdn = dados_tdn['SKU'].to_list()
 
   def extrair_plano(self, desc: str) -> str:
-    PLANOS_NA_DESC = ['cloud identity premium', ('stater', 'starter'), ('workspace standard', 'business standard'), ('workspace plus', 'business plus'), 
+    PLANOS_NA_DESC = ['cloud identity premium', ('stater', 'starter'), ('workspace standard', 'business standard', 'standard'), ('workspace plus', 'business plus'), 
                       ('workspace enterprise', 'enterprise standard', 'enterprise'), 'enterprise plus', ('valt', 'vault'), 'appsheet']
     RETURN_PLANOS = ['Cloud Identity Premium', 'Business Starter', 'Business Standard', 'Business Plus', 'Enterprise Standard', 'Enterprise Plus', 'Google Vault', 'AppSheet']
 
