@@ -162,7 +162,7 @@ class Service:
           if i['produto'] == 'não encontrado':
             i['produto'] = produto if produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['produto']
 
-          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] else i['ativas']
+          i['ativas'] = i['ativas'] + ativas if ativas != 0 and produto not in ['não encontrado', 'AppSheet', 'Cloud Identity Premium', 'Google Vault'] and nao_mensais != 'sim' else i['ativas']
           i['arquivadas'] = i['arquivadas'] + arquivadas if arquivadas != 0 else i['arquivadas']
           i['cloudIdentity'] = i['cloudIdentity'] + ativas if produto == 'Cloud Identity Premium' else i['cloudIdentity']
           i['appSheet'] = i['appSheet'] + ativas if produto == 'AppSheet' else i['appSheet']
@@ -176,7 +176,7 @@ class Service:
         item = {
           'dominio': dominio.lower(),
           'produto': produto if produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else 'não encontrado',
-          'ativas': ativas if produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] else 0,
+          'ativas': ativas if produto not in ['AppSheet', 'Cloud Identity Premium', 'Google Vault'] and nao_mensais != 'sim'  else 0,
           'arquivadas': arquivadas,
           'cloudIdentity': ativas if produto == 'Cloud Identity Premium' else 0,
           'appSheet': ativas if produto == 'AppSheet' else 0,
@@ -185,17 +185,15 @@ class Service:
           'status': situacao,
           'dia_faturamento': self.dia_atual_baseado_na_coluna_faturamento
         }
-
         self.clientes_omie.append(item)
 
       self.ultimo_cliente_tratado = dominio
- 
+
   def define_clientes_painel(self):
     for cliente,                 licencas,                 produto,             status,             plano_pagamento in zip(
         self.coluna_cliente_tdn, self.coluna_licencas_tdn, self.coluna_sku_tdn, self.coluna_status, self.coluna_plano_pagamento_tdn
         ):
       is_a_valid = False
-
       if produto in ['Cloud Identity Free', 'Enterprise Data Regions']: continue
 
       for i in self.clientes_omie:
