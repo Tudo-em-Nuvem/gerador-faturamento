@@ -334,6 +334,29 @@ class GeneratePlan:
       return False
 
   def exec(self):
+    # Limpa listas e campos para evitar duplicidade e dados antigos
+    self.clientes_omie = []
+    self.clientes_painel = []
+    self.clientes_divergentes = []
+    self.clientes_nao_divergentes = []
+    self.ultimo_cliente_tratado = ''
+    self.rodada_inicial = False
+    self.cliente_atual_baseado_na_coluna_cliente = None
+    self.status_atual_baseado_na_coluna_status = None
+    self.dia_atual_baseado_na_coluna_faturamento = None
+
+    # Limpa colunas de dados
+    self.coluna_cliente = []
+    self.coluna_licencas = []
+    self.coluna_desc = []
+    self.coluna_faturamento = []
+    self.coluna_situacao = []
+    self.coluna_cliente_tdn = []
+    self.coluna_licencas_tdn = []
+    self.coluna_status = []
+    self.coluna_plano_pagamento_tdn = []
+    self.coluna_sku_tdn = []
+
     self.init()
     self.define_clientes_omie()
     self.define_clientes_painel()
