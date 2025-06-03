@@ -58,13 +58,6 @@ class DriveService:
           if page_token is None:
             break
 
-        if not files:
-          pass
-        else:
-          print(f'Arquivos encontrados na pasta com ID {folder_id}:')
-          for file in files:
-            # print(f"  Nome: {file['name']}, ID: {file['id']}, Tipo: {file.get('mimeType', 'N/A')}")
-            pass
         return files
 
       except Exception as e:
