@@ -46,7 +46,6 @@ class Service:
     else:
       print(f"Arquivo '{name}' não encontrado para remoção.")
 
-
   def exec_check_fat_dir(self):
     files = self.drive_service.list_files_in_folder(FOLDER_ID)
 
@@ -54,7 +53,7 @@ class Service:
 
     self.__download_itens_from_dir(files)
     name = self.__generate_plan_service.exec()
-    self.drive_service.upload_file_to_drive_folder(DOWNLOAD_DIR, FOLDER_ID)
+    self.drive_service.upload_file_to_drive_folder(f"{DOWNLOAD_DIR}/{name}", FOLDER_ID)
 
     self.clear_dir_downloads()
     self.remove_file_uploaded(name)
