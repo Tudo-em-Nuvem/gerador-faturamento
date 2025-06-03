@@ -311,7 +311,7 @@ class GeneratePlan:
     for day in sorted(dias_faturamento):
       name_arquivo += f'{day} '
 
-    with pd.ExcelWriter(f'{name_arquivo.strip()}.xlsx') as writer:
+    with pd.ExcelWriter(f'{DOWNLOAD_DIR}/{name_arquivo.strip()}.xlsx') as writer:
       df_divergentes.to_excel(writer, sheet_name='Divergentes', index=False)
       df_nao_divergentes.to_excel(writer, sheet_name='Não Divergentes', index=False)
 
