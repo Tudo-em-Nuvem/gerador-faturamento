@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import re
-
+from config import DOWNLOAD_DIR
 class GeneratePlan:
   def __init__(self):
     self.cliente_atual_baseado_na_coluna_cliente = None
@@ -14,12 +14,13 @@ class GeneratePlan:
     self.clientes_divergentes = []
     self.clientes_nao_divergentes = []
 
-    for i in os.listdir('./planilhas'):
+  def init(self):
+    for i in os.listdir(DOWNLOAD_DIR):
       if str(i).endswith('.xlsx'):
         for linha in range(10):
 
           try:
-            dados_omie_excel = pd.read_excel(f'planilhas/{str(i)}', header=linha)
+            dados_omie_excel = pd.read_excel(f'{DOWNLOAD_DIR}/{str(i)}', header=linha)
             dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
             self.coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
             self.coluna_licencas = dados_omie_excel['Quantidade'].to_list()
@@ -28,9 +29,9 @@ class GeneratePlan:
             self.coluna_situacao = dados_omie_excel['Situação'].to_list()
           except Exception as e: pass
 
-    for i in os.listdir('./planilhas'):
+    for i in os.listdir(DOWNLOAD_DIR):
       if str(i).endswith('.csv'):
-        dados_tdn = pd.read_csv(f'planilhas/{str(i)}')
+        dados_tdn = pd.read_csv(f'{DOWNLOAD_DIR}/{str(i)}')
 
         self.coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
         self.coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
@@ -332,11 +333,12 @@ class GeneratePlan:
     except ValueError:
       return False
 
-  def main(self):
+  def exec(self):
+    self.init()
     self.define_clientes_omie()
     self.define_clientes_painel()
     return self.compara_omie_e_painel() 
 
 if __name__ == "__main__":
   service = GeneratePlan()
-  service.main()
+  service.exec()
