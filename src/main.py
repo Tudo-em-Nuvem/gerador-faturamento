@@ -1,3 +1,9 @@
+import subprocess
+import sys
+
+# Instala/atualiza as dependências necessárias
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+
 from drive_service import DriveService
 from generate_plan import GeneratePlan
 from service import Service
