@@ -18,8 +18,8 @@ class Service:
       if mime_type == 'application/vnd.google-apps.folder':
         print(f"Pulando '{file_name}' (é uma pasta).")
         continue
-
-      if mime_type != '': self.drive_service.download_file(file_id, file_name, mime_type)
+        
+      self.drive_service.download_file(file_id, file_name, mime_type)
 
   def create_dir_downloads(self):
     if not os.path.exists(DOWNLOAD_DIR):
@@ -52,6 +52,7 @@ class Service:
     if len(files) != 2: return
 
     self.__download_itens_from_dir(files)
+    print("Todos os downloads foram efetuados")
     name = self.__generate_plan_service.exec()
     self.drive_service.upload_file_to_drive_folder(f"{DOWNLOAD_DIR}/{name}", FOLDER_ID)
 
