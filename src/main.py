@@ -1,8 +1,17 @@
 import subprocess
 import sys
+import os
+
+# Ajusta o caminho para o requirements.txt
+requirements_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'requirements.txt')
 
 # Instala/atualiza as dependências necessárias
-subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+print("Instalando/atualizando dependências...")
+subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", requirements_path])
+
+# Verifica especificamente o openpyxl
+print("Verificando instalação do openpyxl...")
+subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "openpyxl"])
 
 from drive_service import DriveService
 from generate_plan import GeneratePlan
