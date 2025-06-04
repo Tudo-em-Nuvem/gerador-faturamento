@@ -18,8 +18,9 @@ class Service:
       if mime_type == 'application/vnd.google-apps.folder':
         print(f"Pulando '{file_name}' (é uma pasta).")
         continue
-
-      self.drive_service.download_file(file_id, file_name, mime_type)
+      try:
+        self.drive_service.download_file(file_id, file_name, mime_type)
+      except Exception as e: pass
 
   def create_dir_downloads(self):
     if not os.path.exists(DOWNLOAD_DIR):
