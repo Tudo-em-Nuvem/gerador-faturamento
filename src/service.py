@@ -60,5 +60,3 @@ class Service:
       ofx_gen.main()
       print("Arquivo OFX gerado com sucesso.")
       self.drive_service.upload_file_to_drive_folder(f"{OFX_DIR}/{archive_name}.html", FOLDER_OFX_ID)
-
-    else: print("arquivo ja existe")
