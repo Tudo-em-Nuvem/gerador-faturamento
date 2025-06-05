@@ -1,7 +1,9 @@
 *.xlsx
 *.ini
 *.csv
+*.html
 .vscode
 *.zip
 *.json
 *pyc
+.env

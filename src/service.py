@@ -1,6 +1,8 @@
 from drive_service import DriveService
-from generate_plan import GeneratePlan
-from config import FOLDER_ID, DOWNLOAD_DIR
+from utils.generate_plan import GeneratePlan
+from utils.ofx_generator import OfxGenerator
+
+from config import FOLDER_FATURAMENTO_ID, FOLDER_OFX_ID, DOWNLOAD_DIR, OFX_DIR
 import os
 
 class Service:
@@ -21,40 +23,42 @@ class Service:
         
       self.drive_service.download_file(file_id, file_name, mime_type)
 
-  def create_dir_downloads(self):
+  def create_dirs(self):
     if not os.path.exists(DOWNLOAD_DIR):
       os.makedirs(DOWNLOAD_DIR)
       print(f"Diretório de download '{DOWNLOAD_DIR}' criado.")
-    else:
-      print(f"Diretório de download '{DOWNLOAD_DIR}' já existe.")
 
-  def clear_dir_downloads(self):
-     for file in os.listdir(DOWNLOAD_DIR):
-        file_path = os.path.join(DOWNLOAD_DIR, file)
+    if not os.path.exists(OFX_DIR):
+      os.makedirs(OFX_DIR)
+      print(f"Diretório OFX '{OFX_DIR}' criado.")
+
+  def clear_dir(self, dir: str):
+     for file in os.listdir(dir):
+        file_path = os.path.join(dir, file)
         if os.path.isfile(file_path):
           os.remove(file_path)
           print(f"Arquivo '{file}' removido do diretório de download.")
 
-  def remove_file_uploaded(self, name: str):
-    if not name.startswith("./"):
-      name = f"./{name}"
-
-    if os.path.exists(name):
-      os.remove(name)
-      print(f"Arquivo '{name}' removido após upload.")
-
-    else:
-      print(f"Arquivo '{name}' não encontrado para remoção.")
-
   def exec_check_fat_dir(self):
-    files = self.drive_service.list_files_in_folder(FOLDER_ID)
+    files = self.drive_service.list_files_in_folder(FOLDER_FATURAMENTO_ID)
 
     if len(files) != 2: return
 
+    self.create_dirs()
     self.__download_itens_from_dir(files)
     print("Todos os downloads foram efetuados")
     name = self.__generate_plan_service.exec()
-    self.drive_service.upload_file_to_drive_folder(f"{DOWNLOAD_DIR}/{name}", FOLDER_ID)
+    self.drive_service.upload_file_to_drive_folder(f"{DOWNLOAD_DIR}/{name}", FOLDER_FATURAMENTO_ID)
 
-    self.clear_dir_downloads()
-    self.remove_file_uploaded(name)
+    self.clear_dir(DOWNLOAD_DIR)
+
+  def exec_check_ofx_gen(self):
+    ofx_gen = OfxGenerator() 
+    archive_name = ofx_gen.extract_name_from_dates()
+    if not os.path.isfile(OFX_DIR +'/' + archive_name + '.html'):
+      self.clear_dir(OFX_DIR)
+      ofx_gen.main()
+      print("Arquivo OFX gerado com sucesso.")
+      self.drive_service.upload_file_to_drive_folder(f"{OFX_DIR}/{archive_name}.html", FOLDER_OFX_ID)
+
+    else: print("arquivo ja existe")
