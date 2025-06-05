@@ -9,6 +9,7 @@ class Service:
   def __init__(self, drive_service: DriveService, generate_plan_service: GeneratePlan): 
     self.drive_service = drive_service
     self.__generate_plan_service = generate_plan_service
+    self.create_dirs()
 
   def __download_itens_from_dir(self, files_to_download):
     print("\nIniciando download dos arquivos...")
@@ -44,7 +45,6 @@ class Service:
 
     if len(files) != 2: return
 
-    self.create_dirs()
     self.__download_itens_from_dir(files)
     print("Todos os downloads foram efetuados")
     name = self.__generate_plan_service.exec()
