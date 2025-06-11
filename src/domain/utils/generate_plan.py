@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import re
-from config import DOWNLOAD_DIR
+from config import FAT_DIR
 class GeneratePlan:
   def __init__(self):
     self.cliente_atual_baseado_na_coluna_cliente = None
@@ -15,12 +15,12 @@ class GeneratePlan:
     self.clientes_nao_divergentes = []
 
   def init(self):
-    for i in os.listdir(DOWNLOAD_DIR):
+    for i in os.listdir(FAT_DIR):
       if str(i).endswith('.xlsx'):
         for linha in range(10):
 
           try:
-            dados_omie_excel = pd.read_excel(f'{DOWNLOAD_DIR}/{str(i)}', header=linha)
+            dados_omie_excel = pd.read_excel(f'{FAT_DIR}/{str(i)}', header=linha)
             dados_omie_excel = dados_omie_excel.drop(dados_omie_excel.index[-1])
             self.coluna_cliente = dados_omie_excel['Cliente (Nome Fantasia)'].to_list()
             self.coluna_licencas = dados_omie_excel['Quantidade'].to_list()
@@ -29,9 +29,9 @@ class GeneratePlan:
             self.coluna_situacao = dados_omie_excel['Situação'].to_list()
           except Exception as e: pass
 
-    for i in os.listdir(DOWNLOAD_DIR):
+    for i in os.listdir(FAT_DIR):
       if str(i).endswith('.csv'):
-        dados_tdn = pd.read_csv(f'{DOWNLOAD_DIR}/{str(i)}')
+        dados_tdn = pd.read_csv(f'{FAT_DIR}/{str(i)}')
 
         self.coluna_cliente_tdn = dados_tdn['Cliente'].to_list()
         self.coluna_licencas_tdn = dados_tdn['Licenças atribuídas'].to_list()
@@ -311,7 +311,7 @@ class GeneratePlan:
     for day in sorted(dias_faturamento):
       name_arquivo += f'{day} '
 
-    with pd.ExcelWriter(f'{DOWNLOAD_DIR}/{name_arquivo.strip()}.xlsx') as writer:
+    with pd.ExcelWriter(f'{FAT_DIR}/{name_arquivo.strip()}.xlsx') as writer:
       df_divergentes.to_excel(writer, sheet_name='Divergentes', index=False)
       df_nao_divergentes.to_excel(writer, sheet_name='Não Divergentes', index=False)
 

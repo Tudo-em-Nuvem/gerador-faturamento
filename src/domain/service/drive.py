@@ -1,5 +1,5 @@
 from google.oauth2 import service_account
-from config import MIME_TYPE_MAP, SERVICE_ACCOUNT_FILE, SCOPES, DOWNLOAD_DIR
+from config import MIME_TYPE_MAP, SERVICE_ACCOUNT_FILE, SCOPES, FAT_DIR
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
@@ -28,7 +28,7 @@ class DriveService:
     except Exception as e:
       print(f"Erro durante a autenticação: {e}")
       self.service = service
-      return 
+      return
 
   def list_files_in_folder(self, folder_id):
       """
@@ -64,16 +64,16 @@ class DriveService:
         print(f"Ocorreu um erro ao listar arquivos: {e}")
         return []
 
-  def download_file(self, file_id, file_name, mime_type):
+  def download_file(self, file_id, file_name, mime_type, dir):
     """
     Baixa um arquivo do Google Drive para o diretório local.
     Trata arquivos nativos do Google Workspace e outros tipos.
     """
     # Garante que o diretório de download exista
-    if not os.path.exists(DOWNLOAD_DIR):
-      os.makedirs(DOWNLOAD_DIR)
+    if not os.path.exists(dir):
+      os.makedirs(dir)
 
-    file_path = os.path.join(DOWNLOAD_DIR, file_name)
+    file_path = os.path.join(dir, file_name)
 
     try:
       if 'google-apps' in mime_type:
@@ -87,7 +87,7 @@ class DriveService:
         base_name, _ = os.path.splitext(file_name)
 
         if 'spreadsheetml' in export_mime_type:
-          file_path = os.path.join(DOWNLOAD_DIR, f"{base_name}.xlsx") 
+          file_path = os.path.join(FAT_DIR, f"{base_name}.xlsx") 
           print(f"Exportando '{file_name}' (ID: {file_id}) como {export_mime_type} para '{file_path}'...")
           request = self.service.files().export_media(fileId=file_id, mimeType=export_mime_type)
         

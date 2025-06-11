@@ -13,16 +13,16 @@ class OfxGenerator:
     self.date0_br = self.date[0].split('-')[2] + '/' + self.date[0].split('-')[1] + '/' + self.date[0].split('-')[0]
 
   def get_date(self) -> tuple[str, str]:
-      hoje = date.today()
+    hoje = date.today()
 
-      if hoje.weekday() == 0:  # Se for segunda-feira
-          data_inicial = hoje - timedelta(days=3)  # Sexta
-          data_final = hoje - timedelta(days=1)  # Domingo
-      else:
-          data_inicial = hoje - timedelta(days=1)  # Ontem
-          data_final = hoje - timedelta(days=1)  # Ontem
+    if hoje.weekday() == 0:  # Se for segunda-feira
+      data_inicial = hoje - timedelta(days=3)  # Sexta
+      data_final = hoje - timedelta(days=1)  # Domingo
+    else:
+      data_inicial = hoje - timedelta(days=1)  # Ontem
+      data_final = hoje - timedelta(days=1)  # Ontem
 
-      return data_inicial.strftime('%Y-%m-%d'), data_final.strftime('%Y-%m-%d')
+    return data_inicial.strftime('%Y-%m-%d'), data_final.strftime('%Y-%m-%d')
 
   def get_financial_transactions(self):
     url = f'https://apitdnomieasaas.squareweb.app/asaas/extract'
