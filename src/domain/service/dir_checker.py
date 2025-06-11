@@ -65,12 +65,11 @@ class DirCheckerService:
 
   def exec_check_comparator_subscription_asaas(self):
     files = self.drive_service.list_files_in_folder(FOLDER_SUBSCRIPTIONS_ID)
-    print(files)
+
     if len(files) != 2: return
 
     file_names = self.__download_itens_from_dir(files, SUBSCRIPTIONS_DIR)
     print("Todos os downloads foram efetuados")
-    print(file_names)
     subscriptions_comparator(file_names[0], file_names[1])
     self.drive_service.upload_file_to_drive_folder(f"{SUBSCRIPTIONS_DIR}/valores_diferentes.xlsx", FOLDER_SUBSCRIPTIONS_ID)
 

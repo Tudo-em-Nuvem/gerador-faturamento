@@ -14,9 +14,6 @@ def subscriptions_comparator(file_name1, file_name2):
     asaas = pd.read_excel(f"{SUBSCRIPTIONS_DIR}/{file_name1}", header=0)
     omie = pd.read_excel(f"{SUBSCRIPTIONS_DIR}/{file_name2}", header=2)
 
-  print(omie.columns.values.tolist())
-  print(omie.head())
-
   asaas_df = {'contrato': [], 'valor': []}
   for domain, valor in zip(asaas['Nome'], asaas['Valor']):
     asaas_df['contrato'].append(domain.split(',')[0])
