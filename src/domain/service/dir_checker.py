@@ -30,7 +30,7 @@ class DirCheckerService:
     return file_names
 
   def create_dirs(self):
-    dirs = [FAT_DIR, OFX_DIR, SUBSCRIPTIONS_DIR, FOLDER_ASAAS_OMIE_CHECKER_ID]
+    dirs = [FAT_DIR, OFX_DIR, SUBSCRIPTIONS_DIR, ASAAS_OMIE_CHECKER_DIR]
     for dir in dirs:
       if not os.path.exists(dir):
         os.makedirs(dir)
