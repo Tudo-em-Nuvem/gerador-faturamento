@@ -43,6 +43,6 @@ def subscriptions_comparator(file_name1, file_name2):
           valores_diferentes['valor_omie'].append(valor_omie)
 
   valores_diferentes_df = pd.DataFrame(valores_diferentes)
-  # Dropar duplicados cujo a coluna contrato sejam iguais
+  
   valores_diferentes_df = valores_diferentes_df.drop_duplicates(subset=['contrato'])
   valores_diferentes_df.to_excel(f'{SUBSCRIPTIONS_DIR}/valores_diferentes.xlsx', index=False)
