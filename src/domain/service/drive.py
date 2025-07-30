@@ -152,3 +152,20 @@ class DriveService:
     except Exception as e:
       print(f"ERRO ao fazer upload de '{file_name}': {e}")
       return None
+
+  def clear_drive_folder(self, drive_folder_id):
+    """
+    Limpa todos os arquivos de uma pasta específica no Google Drive.
+    """
+    files = self.list_files_in_folder(drive_folder_id)
+    
+    if not files:
+      print("Nenhum arquivo encontrado para limpar.")
+      return
+
+    for file in files:
+      try:
+        self.service.files().delete(fileId=file['id'], supportsAllDrives=True).execute()
+        print(f"Arquivo '{file['name']}' (ID: {file['id']}) removido com sucesso.")
+      except Exception as e:
+        print(f"ERRO ao remover '{file['name']}' (ID: {file['id']}): {e}")

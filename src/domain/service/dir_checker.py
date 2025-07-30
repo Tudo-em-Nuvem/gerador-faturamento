@@ -3,7 +3,8 @@ from domain.utils.asas_omie_checker import asaas_omie_checker
 from domain.utils.subscriptions_comparator import subscriptions_comparator
 from domain.utils.generate_plan import GeneratePlan
 from domain.utils.ofx_generator import OfxGenerator
-from config import ASAAS_OMIE_CHECKER_DIR, FOLDER_FATURAMENTO_ID, FOLDER_OFX_ID, FAT_DIR, FOLDER_SUBSCRIPTIONS_ID, OFX_DIR, SUBSCRIPTIONS_DIR, FOLDER_ASAAS_OMIE_CHECKER_ID
+from config import (ASAAS_OMIE_CHECKER_DIR, FOLDER_FATURAMENTO_ID, FOLDER_OFX_ID, FAT_DIR, FOLDER_SUBSCRIPTIONS_ID, 
+                    OFX_DIR, SUBSCRIPTIONS_DIR, FOLDER_ASAAS_OMIE_CHECKER_ID, FOLDER_OPORTUNITY_ID, FOLDER_OPORTUNITY_DIR)
 import os
 
 class DirCheckerService:
@@ -30,7 +31,7 @@ class DirCheckerService:
     return file_names
 
   def create_dirs(self):
-    dirs = [FAT_DIR, OFX_DIR, SUBSCRIPTIONS_DIR, ASAAS_OMIE_CHECKER_DIR]
+    dirs = [FAT_DIR, OFX_DIR, SUBSCRIPTIONS_DIR, ASAAS_OMIE_CHECKER_DIR, FOLDER_OPORTUNITY_DIR]
     for dir in dirs:
       if not os.path.exists(dir):
         os.makedirs(dir)
@@ -87,3 +88,22 @@ class DirCheckerService:
     self.drive_service.upload_file_to_drive_folder(f"{ASAAS_OMIE_CHECKER_DIR}/asaas_que_nao_estao_na_omie.xlsx", FOLDER_ASAAS_OMIE_CHECKER_ID)
 
     self.clear_dir(ASAAS_OMIE_CHECKER_DIR)
+
+  def exec_oportunity_checker(self):
+    """
+    Método para verificar oportunidades de vendas.
+    """
+    files = self.drive_service.list_files_in_folder(FOLDER_OPORTUNITY_ID)
+    
+    if len(files) != 1: return
+
+    file_names = self.__download_itens_to_dir(files, FOLDER_OPORTUNITY_DIR)
+    print("Todos os downloads foram efetuados")
+    from domain.utils.create_oportunities import create_opportunities
+    create_opportunities(file_names[0])
+    # Envia um txt com nome "sucesso" a pasta do drive
+
+    with open(f"{FOLDER_OPORTUNITY_DIR}/sucesso.txt", "w") as f:
+      f.write("Oportunidades criadas com sucesso!")
+    self.drive_service.upload_file_to_drive_folder(f"{FOLDER_OPORTUNITY_DIR}/sucesso.txt", FOLDER_OPORTUNITY_ID)
+    self.clear_dir(FOLDER_OPORTUNITY_DIR)
