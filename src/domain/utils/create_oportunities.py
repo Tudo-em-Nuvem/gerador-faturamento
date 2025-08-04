@@ -71,6 +71,7 @@ def create_opportunities(file_name):
           "telefone_email": {"cDDDTel": phone_ddd, "cNumTel": phone_number, "cEmail": email},
           "endereco": {"cEndereco": "A ver"}
         }
+
         if cnpj:
           account_data["identificacao"]["cDoc"] = cnpj
 
@@ -98,7 +99,7 @@ def create_opportunities(file_name):
           logging.exception(f"Linha {idx}: Erro ao criar conta: {e}")
           break
       
-      if ja_existe: break
+      if ja_existe: continue
       nCodConta = response.json().get('nCod', None)
       if not nCodConta:
         logging.error(f"Linha {idx}: nCodConta não retornado. Pulando para próxima linha.")
@@ -136,7 +137,7 @@ def create_opportunities(file_name):
           logging.exception(f"Linha {idx}: Erro ao criar contato: {e}")
           break
 
-      if ja_existe: break
+      if ja_existe: continue
       nCodContato = response.json().get('nCod', None)
       if not nCodContato:
         logging.error(f"Linha {idx}: nCodContato não retornado. Pulando para próxima linha.")
