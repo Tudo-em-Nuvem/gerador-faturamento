@@ -32,6 +32,8 @@ def create_opportunities(file_name):
       "jhonata": 5131055985,
     }
 
+    erros = []
+
     for idx, i in df.iterrows():
       ja_existe = False
       name = i["nome"]
@@ -90,6 +92,7 @@ def create_opportunities(file_name):
             logging.error(f"Linha {idx}: Falha ao criar conta (status {status_code}): {response.text}")
             if "já existe" in response.text: 
               ja_existe = True
+              erros.append(f"Linha {idx}: Conta já existe para {name}.")
               break
 
           sleep(3)
@@ -186,3 +189,5 @@ def create_opportunities(file_name):
         logging.info(f"Linha {idx}: Oportunidade criada com sucesso!")
       else:
         logging.error(f"Linha {idx}: Não foi possível criar a oportunidade após {tentativas_op} tentativas.")
+
+    return erros if erros else "Todas as oportunidades foram criadas com sucesso!"

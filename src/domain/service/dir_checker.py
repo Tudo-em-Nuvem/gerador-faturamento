@@ -100,10 +100,15 @@ class DirCheckerService:
     file_names = self.__download_itens_to_dir(files, FOLDER_OPORTUNITY_DIR)
     print("Todos os downloads foram efetuados")
     from domain.utils.create_oportunities import create_opportunities
-    create_opportunities(file_names[0])
+    errors = create_opportunities(file_names[0])
     # Envia um txt com nome "sucesso" a pasta do drive
 
     with open(f"{FOLDER_OPORTUNITY_DIR}/sucesso.txt", "w") as f:
-      f.write("Oportunidades criadas com sucesso!")
+      # f.write("Oportunidades criadas com sucesso!")
+      if isinstance(errors, list) and errors:
+        f.write("\n".join(errors))
+      else:
+        f.write("Todas as oportunidades foram criadas com sucesso!")
+        
     self.drive_service.upload_file_to_drive_folder(f"{FOLDER_OPORTUNITY_DIR}/sucesso.txt", FOLDER_OPORTUNITY_ID)
     self.clear_dir(FOLDER_OPORTUNITY_DIR)
