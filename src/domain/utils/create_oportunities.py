@@ -106,7 +106,7 @@ def create_opportunities(file_name):
         "telefone_email": {"cDDDCel1": phone_ddd, "cNumCel1": phone_number, "cEmail": email},
         "endereco": {"cEndereco": "A ver"}
       }
-      logging.info(f"Linha {idx}: Criando contato (tentativa {tentativas_contato+1})...")
+      logging.info(f"Linha {idx}: Criando contato)...")
       try:
         response = requests.post(
           'https://apitdnomieasaas.squareweb.app/omie/contato_oportunidade',
@@ -123,7 +123,6 @@ def create_opportunities(file_name):
           continue
 
         sleep(3)
-        tentativas_contato += 1
       except Exception as e:
         logging.error(f"Linha {idx}: {response.text}")
         erros.append(f"Linha {idx}: {response.text}")
