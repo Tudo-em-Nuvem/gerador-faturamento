@@ -33,6 +33,7 @@ def create_opportunities(file_name):
     }
 
     erros = []
+    ja_existe = []
 
     for idx, i in df.iterrows():
       name = i["nome"]
@@ -51,6 +52,7 @@ def create_opportunities(file_name):
       cnpj_pattern = r'^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$'
       cnpj = None
       business_name = None
+
       if re.match(cnpj_pattern, cnpj_or_company_name):
         cnpj = cnpj_or_company_name
       else:
@@ -77,17 +79,26 @@ def create_opportunities(file_name):
       try:
         response = requests.post(
           'https://apitdnomieasaas.squareweb.app/omie/conta_oportunidade',
-          json=account_data,
-          headers={
+          json = account_data,
+          headers = {
             'Content-Type': 'application/json',
             'x-api-key': os.getenv('ACCESS_TOKEN')
           }
         )
+
         status_code = response.status_code
         if status_code != 200:
+          if "já existe" in response.text:
+            ja_existe.append(name)
+
+            if len(ja_existe) == 4: 
+              erros.append("muitos erros, verifique os nomes duplicados")
+              break
+
           logging.error(f"Linha {idx}: {response.text}")
           erros.append(f"Linha {idx}: {response.text}")
           continue
+
         sleep(3)
         
       except Exception as e:
@@ -106,6 +117,7 @@ def create_opportunities(file_name):
         "telefone_email": {"cDDDCel1": phone_ddd, "cNumCel1": phone_number, "cEmail": email},
         "endereco": {"cEndereco": "A ver"}
       }
+
       logging.info(f"Linha {idx}: Criando contato)...")
       try:
         response = requests.post(
@@ -116,6 +128,7 @@ def create_opportunities(file_name):
             'x-api-key': os.getenv('ACCESS_TOKEN')
           }
         )
+
         status_code = response.status_code
         if status_code != 200:
           logging.error(f"Linha {idx}: {response.text}")
@@ -123,6 +136,7 @@ def create_opportunities(file_name):
           continue
 
         sleep(3)
+
       except Exception as e:
         logging.error(f"Linha {idx}: {response.text}")
         erros.append(f"Linha {idx}: {response.text}")
@@ -134,7 +148,6 @@ def create_opportunities(file_name):
         continue
 
       # Cria oportunidade
-
       opportunity_data = {
         "identificacao": {
           "cCodIntOp": uuid,
@@ -157,6 +170,7 @@ def create_opportunities(file_name):
             'x-api-key': os.getenv('ACCESS_TOKEN')
           }
         )
+
         status_code = response.status_code
         if status_code != 200:
           logging.error(f"Linha {idx}: {response.text}")
@@ -164,6 +178,7 @@ def create_opportunities(file_name):
           continue
 
         sleep(3)
+        
       except Exception as e:
         logging.error(f"Linha {idx}: {response.text}")
         erros.append(f"Linha {idx}: {response.text}")
