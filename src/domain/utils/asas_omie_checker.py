@@ -15,4 +15,11 @@ def asaas_omie_checker(file_name1, file_name2):
   asaas['contrato'] = asaas['Nome'].str.split(',').str[0]
 
   asaas_not_in_omie = asaas[~asaas['contrato'].isin(omie['Nº do Contrato de Venda'])]
-  asaas_not_in_omie.to_excel(f'{ASAAS_OMIE_CHECKER_DIR}/asaas_que_nao_estao_na_omie.xlsx', index=False)
+  asaas_not_in_omie['Status'] = 'Não Encontrado na OMIE'
+
+  omie_not_in_asaas = omie[~omie['Nº do Contrato de Venda'].isin(asaas['contrato'])]
+  omie_not_in_asaas['Status'] = 'Não Encontrado no ASAAS'
+
+  result = pd.concat([asaas_not_in_omie[['contrato', 'Status']], omie_not_in_asaas[['Nº do Contrato de Venda', 'Status']].rename(columns={'Nº do Contrato de Venda': 'contrato'})])
+
+  result.to_excel(f'{ASAAS_OMIE_CHECKER_DIR}/asaas_que_nao_estao_na_omie.xlsx', index=False)
