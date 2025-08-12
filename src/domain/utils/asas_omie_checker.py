@@ -14,7 +14,7 @@ def asaas_omie_checker(file_name1, file_name2):
 
   asaas['contrato'] = asaas['Nome'].str.split(',').str[0]
 
-  asaas_not_in_omie = asaas[~asaas['contrato'].isin(omie['Nº do Contrato de Venda'])]
+  asaas_not_in_omie = asaas[~asaas['contrato'].isin(omie['Nº do Contrato de Venda'])].copy()
   asaas_not_in_omie['Status'] = 'Não Encontrado na OMIE'
 
   omie_not_in_asaas = omie[~omie['Nº do Contrato de Venda'].isin(asaas['contrato'])]
