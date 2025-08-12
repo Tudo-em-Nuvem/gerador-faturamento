@@ -85,7 +85,7 @@ class DirCheckerService:
     file_names = self.__download_itens_to_dir(files, ASAAS_OMIE_CHECKER_DIR)
     print("Todos os downloads foram efetuados")
     asaas_omie_checker(file_names[0], file_names[1])
-    self.drive_service.upload_file_to_drive_folder(f"{ASAAS_OMIE_CHECKER_DIR}/asaas_que_nao_estao_na_omie.xlsx", FOLDER_ASAAS_OMIE_CHECKER_ID)
+    self.drive_service.upload_file_to_drive_folder(f"{ASAAS_OMIE_CHECKER_DIR}/omie_asaas_erros.xlsx", FOLDER_ASAAS_OMIE_CHECKER_ID)
 
     self.clear_dir(ASAAS_OMIE_CHECKER_DIR)
 

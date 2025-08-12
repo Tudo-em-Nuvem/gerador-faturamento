@@ -60,6 +60,7 @@ def create_opportunities(file_name):
 
       vendedor = i["vendedor"]
       id_vendedor = vendedores.get(vendedor.lower(), None)
+
       if not id_vendedor:
         logging.warning(f"Linha {idx}: Vendedor '{vendedor}' não encontrado. Oportunidade não criada.")
         continue
