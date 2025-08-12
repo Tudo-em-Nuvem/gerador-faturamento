@@ -22,4 +22,4 @@ def asaas_omie_checker(file_name1, file_name2):
 
   result = pd.concat([asaas_not_in_omie[['contrato', 'Status']], omie_not_in_asaas[['Nº do Contrato de Venda', 'Status']].rename(columns={'Nº do Contrato de Venda': 'contrato'})])
 
-  result.to_excel(f'{ASAAS_OMIE_CHECKER_DIR}/asaas_que_nao_estao_na_omie.xlsx', index=False)
+  result.to_excel(f'{ASAAS_OMIE_CHECKER_DIR}/omie_asaas_erros.xlsx', index=False)
