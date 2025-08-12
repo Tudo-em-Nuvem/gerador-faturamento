@@ -109,7 +109,12 @@ def create_opportunities(file_name):
         logging.error(f"Erro ao buscar contatos: {response.text}")
         return
 
-      data = response.json()
+      try:
+        data = response.json()
+      except Exception as e:
+        logging.error(f"Erro ao decodificar JSON: {e} | Resposta: {response.text}")
+        return
+      
       if not data:
         logging.info("Nenhum contato encontrado.")
         return
@@ -140,7 +145,7 @@ def create_opportunities(file_name):
   }
 
   erros = []
-  
+
   # Busca todas as contas, contatos e oportunidades uma vez
   contas = get_contas() or []
   contatos = get_contatos() or []
