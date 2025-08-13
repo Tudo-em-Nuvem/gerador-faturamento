@@ -237,7 +237,7 @@ def create_opportunities(file_name):
     # 2. Verifica se o contato existe para esse uuid e nCodConta
     existing_contact = next((c for c in contatos if c["identificacao"]['cCodInt'] == uuid and c["identificacao"]['nCodConta'] == nCodConta), None)
     if existing_contact:
-      nCodContato = existing_contact['nCod']
+      nCodContato = existing_contact["identificacao"]['nCod']
     else:
       # Cria contato
       contact_data = {
