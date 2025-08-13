@@ -44,10 +44,11 @@ def create_opportunities(file_name):
       if not data:
         logging.info("Nenhuma oportunidade encontrada.")
         return
-      
+
       oportunidades.extend(data.get('cadastros', []))
       if page == data.get('total_de_paginas', 1):
         break
+      
       page += 1
       sleep(1)  # Evita sobrecarga na API
 
@@ -58,6 +59,7 @@ def create_opportunities(file_name):
     logging.info("Buscando contas da API...")
     contas = []
     page = 1
+    
     while True:
       response = requests.get(
         'https://apitdnomieasaas.squareweb.app/omie/listar_contas_oportunidade',
@@ -93,6 +95,7 @@ def create_opportunities(file_name):
     logging.info("Buscando contatos da API...")
     contatos = []
     page = 1
+    
     while True:
       response = requests.get(
         'https://apitdnomieasaas.squareweb.app/omie/listar_contatos_oportunidade',
@@ -111,6 +114,7 @@ def create_opportunities(file_name):
 
       try:
         data = response.json()
+
       except Exception as e:
         logging.error(f"Erro ao decodificar JSON: {e} | Resposta: {response.text}")
         return
@@ -154,9 +158,11 @@ def create_opportunities(file_name):
   oportunidades = get_oportunidades() or []
 
   for idx, i in df.iterrows():
+    line = idx+1
     name = i["nome"]
+    
     if type(name) is not str:
-      logging.warning(f"Linha {idx}: Nome inválido: {name}. Oportunidade não criada.")
+      logging.warning(f"Linha {line}: Nome inválido: {name}. Oportunidade não criada.")
       continue
 
     phone: str = str(i["telefone"])
@@ -170,6 +176,7 @@ def create_opportunities(file_name):
     cnpj_pattern = r'^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$'
     cnpj = None
     business_name = None
+    
     if re.match(cnpj_pattern, cnpj_or_company_name):
       cnpj = cnpj_or_company_name
     else:
@@ -177,21 +184,25 @@ def create_opportunities(file_name):
 
     vendedor = i["vendedor"]
     id_vendedor = vendedores.get(vendedor.lower(), None)
+    
     if not id_vendedor:
-      logging.warning(f"Linha {idx}: Vendedor '{vendedor}' não encontrado. Oportunidade não criada.")
+      logging.warning(f"Linha {line}: Vendedor '{vendedor}' não encontrado. Oportunidade não criada.")
       continue
 
     account_name = name if not business_name else business_name
 
     # 1. Verifica se a conta existe
     existing_account = next((c for c in contas if c['identificacao']['cNome'] == account_name), None)
+    
     if existing_account:
       uuid = existing_account["identificacao"]['cCodInt']
       nCodConta = existing_account["identificacao"]['nCod']
+    
     else:
       if existing_account:
         uuid = existing_account["identificacao"]['cCodInt']
         nCodConta = existing_account["identificacao"]['nCod']
+      
       else:
         # Cria conta
         uuid = uuid4().hex
@@ -200,9 +211,12 @@ def create_opportunities(file_name):
           "telefone_email": {"cDDDTel": phone_ddd, "cNumTel": phone_number, "cEmail": email},
           "endereco": {"cEndereco": "A ver"}
         }
+
         if cnpj:
           account_data["identificacao"]["cDoc"] = cnpj
-        logging.info(f"Linha {idx}: Criando conta para {account_name}...")
+       
+        logging.info(f"Linha {line}: Criando conta para {account_name}...")
+        
         try:
           response = requests.post(
             'https://apitdnomieasaas.squareweb.app/omie/conta_oportunidade',
@@ -212,32 +226,40 @@ def create_opportunities(file_name):
               'x-api-key': os.getenv('ACCESS_TOKEN')
             }
           )
+
           status_code = response.status_code
+          
           if status_code != 200:
-            msg = f"[Conta] Linha {idx} - Nome: {name} | Erro: {response.text}"
+            msg = f"[Conta] Linha {line} - Nome: {name} | Erro: {response.text}"
             logging.error(msg)
             erros.append(msg)
             continue
+          
           sleep(3)
+          
           nCodConta = response.json().get('nCod', None)
+          
           if not nCodConta:
-            msg = f"[Conta] Linha {idx} - Nome: {name} | Erro: nCodConta não retornado. Pulando para próxima linha."
+            msg = f"[Conta] Linha {line} - Nome: {name} | Erro: nCodConta não retornado. Pulando para próxima linha."
             logging.error(msg)
             erros.append(msg)
             continue
 
           # Atualiza lista de contas para próximos usos
           contas.append({"identificacao": {"cNome": account_name, "cCodInt": uuid, "nCod": nCodConta}})
+        
         except Exception as e:
-          msg = f"[Conta] Linha {idx} - Nome: {name} | Exceção: {e}"
+          msg = f"[Conta] Linha {line} - Nome: {name} | Exceção: {e}"
           logging.exception(msg)
           erros.append(msg)
           continue
 
     # 2. Verifica se o contato existe para esse uuid e nCodConta
     existing_contact = next((c for c in contatos if c["identificacao"]['cCodInt'] == uuid and c["identificacao"]['nCodConta'] == nCodConta), None)
+    
     if existing_contact:
       nCodContato = existing_contact["identificacao"]['nCod']
+    
     else:
       # Cria contato
       contact_data = {
@@ -245,7 +267,9 @@ def create_opportunities(file_name):
         "telefone_email": {"cDDDCel1": phone_ddd, "cNumCel1": phone_number, "cEmail": email},
         "endereco": {"cEndereco": "A ver"}
       }
-      logging.info(f"Linha {idx}: Criando contato...")
+
+      logging.info(f"Linha {line}: Criando contato...")
+      
       try:
         response = requests.post(
           'https://apitdnomieasaas.squareweb.app/omie/contato_oportunidade',
@@ -255,31 +279,38 @@ def create_opportunities(file_name):
             'x-api-key': os.getenv('ACCESS_TOKEN')
           }
         )
+        
         status_code = response.status_code
+        
         if status_code != 200:
-          msg = f"[Contato] Linha {idx} - Nome: {name} | Conta: {account_name} | Erro: {response.text}"
+          msg = f"[Contato] Linha {line} - Nome: {name} | Conta: {account_name} | Erro: {response.text}"
           logging.error(msg)
           erros.append(msg)
           continue
+        
         sleep(3)
         nCodContato = response.json().get('nCod', None)
+        
         if not nCodContato:
-          msg = f"[Contato] Linha {idx} - Nome: {name} | Conta: {account_name} | Erro: nCodContato não retornado. Pulando para próxima linha."
+          msg = f"[Contato] Linha {line} - Nome: {name} | Conta: {account_name} | Erro: nCodContato não retornado. Pulando para próxima linha."
           logging.error(msg)
           erros.append(msg)
           continue
+        
         # Atualiza lista de contatos para próximos usos
         contatos.append({"cCodInt": uuid, "nCodConta": nCodConta, "nCod": nCodContato})
+      
       except Exception as e:
-        msg = f"[Contato] Linha {idx} - Nome: {name} | Conta: {account_name} | Exceção: {e}"
+        msg = f"[Contato] Linha {line} - Nome: {name} | Conta: {account_name} | Exceção: {e}"
         logging.exception(msg)
         erros.append(msg)
         continue
 
     # 3. Verifica se a oportunidade existe para esse nCodConta e nCodContato
     existing_opportunity = next((o for o in oportunidades if o['identificacao']['nCodConta'] == nCodConta and o['identificacao']['nCodContato'] == nCodContato), None)
+    
     if existing_opportunity:
-      msg = f"[Oportunidade] Linha {idx} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Já existe. Pulando."
+      msg = f"[Oportunidade] Linha {line} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Já existe. Pulando."
       logging.info(msg)
       erros.append(msg)
       continue
@@ -296,7 +327,9 @@ def create_opportunities(file_name):
         "nCodOrigem": 1889067064
       }
     }
-    logging.info(f"Linha {idx}: Criando oportunidade...")
+
+    logging.info(f"Linha {line}: Criando oportunidade...")
+
     try:
       response = requests.post(
         'https://apitdnomieasaas.squareweb.app/omie/oportunidade',
@@ -307,18 +340,22 @@ def create_opportunities(file_name):
         }
       )
       status_code = response.status_code
+
       if status_code != 200:
-        msg = f"[Oportunidade] Linha {idx} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Erro: {response.text}"
+        msg = f"[Oportunidade] Linha {line} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Erro: {response.text}"
         logging.error(msg)
         erros.append(msg)
         continue
+
       sleep(3)
-      msg = f"[Oportunidade] Linha {idx} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Criada com sucesso."
+      msg = f"[Oportunidade] Linha {line} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Criada com sucesso."
       logging.info(msg)
+
       # Atualiza lista de oportunidades para próximos usos
       oportunidades.append({"identificacao": {"nCodConta": nCodConta, "nCodContato": nCodContato}})
+
     except Exception as e:
-      msg = f"[Oportunidade] Linha {idx} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Exceção: {e}"
+      msg = f"[Oportunidade] Linha {line} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Exceção: {e}"
       logging.exception(msg)
       erros.append(msg)
       continue
