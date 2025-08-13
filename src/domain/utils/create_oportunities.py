@@ -46,9 +46,9 @@ def create_opportunities(file_name):
         return
       
       oportunidades.extend(data.get('cadastros', []))
-      page += 1
       if page == data.get('total_de_paginas', 1):
         break
+      page += 1
       sleep(1)  # Evita sobrecarga na API
 
     return oportunidades
@@ -80,9 +80,9 @@ def create_opportunities(file_name):
         return
       
       contas.extend(data.get('cadastros', []))
-      page += 1
       if page == data.get('total_de_paginas', 1):
         break
+      page += 1
 
       sleep(1) # Evita sobrecarga na API
 
@@ -120,9 +120,9 @@ def create_opportunities(file_name):
         return
       
       contatos.extend(data.get('cadastros', []))
-      page += 1
       if page == data.get('total_de_paginas', 1):
         break
+      page += 1
 
       sleep(1)
 
