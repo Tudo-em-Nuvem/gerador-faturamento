@@ -148,6 +148,8 @@ def create_opportunities(file_name):
 
   # Busca todas as contas, contatos e oportunidades uma vez
   contas = get_contas() or []
+  print(len(contas))
+  print(contas[0])
   contatos = get_contatos() or []
   oportunidades = get_oportunidades() or []
 
@@ -200,7 +202,7 @@ def create_opportunities(file_name):
         }
         if cnpj:
           account_data["identificacao"]["cDoc"] = cnpj
-        logging.info(f"Linha {idx}: Criando conta para {name}...")
+        logging.info(f"Linha {idx}: Criando conta para {account_name}...")
         try:
           response = requests.post(
             'https://apitdnomieasaas.squareweb.app/omie/conta_oportunidade',
