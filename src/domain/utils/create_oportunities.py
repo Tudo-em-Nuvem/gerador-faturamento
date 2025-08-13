@@ -182,14 +182,14 @@ def create_opportunities(file_name):
     account_name = name if not business_name else business_name
 
     # 1. Verifica se a conta existe
-    existing_account = next((c for c in contas if c['cNome'] == account_name), None)
+    existing_account = next((c for c in contas if c['identificacao']['cNome'] == account_name), None)
     if existing_account:
-      uuid = existing_account['cCodInt']
-      nCodConta = existing_account['nCod']
+      uuid = existing_account["identificacao"]['cCodInt']
+      nCodConta = existing_account["identificacao"]['nCod']
     else:
       if existing_account:
-        uuid = existing_account['cCodInt']
-        nCodConta = existing_account['nCod']
+        uuid = existing_account["identificacao"]['cCodInt']
+        nCodConta = existing_account["identificacao"]['nCod']
       else:
         # Cria conta
         uuid = uuid4().hex
@@ -223,8 +223,9 @@ def create_opportunities(file_name):
             logging.error(msg)
             erros.append(msg)
             continue
+
           # Atualiza lista de contas para próximos usos
-          contas.append({"cNome": account_name, "cCodInt": uuid, "nCod": nCodConta})
+          contas.append({"identificacao": {"cNome": account_name, "cCodInt": uuid, "nCod": nCodConta}})
         except Exception as e:
           msg = f"[Conta] Linha {idx} - Nome: {name} | Exceção: {e}"
           logging.exception(msg)
@@ -232,7 +233,7 @@ def create_opportunities(file_name):
           continue
 
     # 2. Verifica se o contato existe para esse uuid e nCodConta
-    existing_contact = next((c for c in contatos if c['cCodInt'] == uuid and c['nCodConta'] == nCodConta), None)
+    existing_contact = next((c for c in contatos if c["identificacao"]['cCodInt'] == uuid and c["identificacao"]['nCodConta'] == nCodConta), None)
     if existing_contact:
       nCodContato = existing_contact['nCod']
     else:

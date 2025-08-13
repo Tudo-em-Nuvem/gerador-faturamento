@@ -1,7 +1,8 @@
 import requests
+import pytz
 import dotenv
 import os
-from datetime import date, timedelta
+from datetime import timedelta
 import pandas as pd
 from config import OFX_DIR
 
@@ -13,14 +14,17 @@ class OfxGenerator:
     self.date0_br = self.date[0].split('-')[2] + '/' + self.date[0].split('-')[1] + '/' + self.date[0].split('-')[0]
 
   def get_date(self) -> tuple[str, str]:
-    hoje = date.today()
+    tz = pytz.timezone('America/Sao_Paulo')
+    # Garante que a data é do fuso de São Paulo
+    now_sp = pd.Timestamp.now(tz)
+    hoje_sp = now_sp.date()
 
-    if hoje.weekday() == 0:  # Se for segunda-feira
-      data_inicial = hoje - timedelta(days=3)  # Sexta
-      data_final = hoje - timedelta(days=1)  # Domingo
+    if hoje_sp.weekday() == 0:  # Se for segunda-feira
+      data_inicial = hoje_sp - timedelta(days=3)  # Sexta
+      data_final = hoje_sp - timedelta(days=1)  # Domingo
     else:
-      data_inicial = hoje - timedelta(days=1)  # Ontem
-      data_final = hoje - timedelta(days=1)  # Ontem
+      data_inicial = hoje_sp - timedelta(days=1)  # Ontem
+      data_final = hoje_sp - timedelta(days=1)  # Ontem
 
     return data_inicial.strftime('%Y-%m-%d'), data_final.strftime('%Y-%m-%d')
 
