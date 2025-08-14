@@ -192,7 +192,7 @@ def create_opportunities(file_name):
     account_name = name if not business_name else business_name
 
     # 1. Verifica se a conta existe
-    existing_account = next((c for c in contas if c['identificacao']['cNome'] == account_name), None)
+    existing_account = next((c for c in contas if 'identificacao' in c and c['identificacao']['cNome'] == account_name), None)
     
     if existing_account:
       uuid = existing_account["identificacao"]['cCodInt']
@@ -255,7 +255,7 @@ def create_opportunities(file_name):
           continue
 
     # 2. Verifica se o contato existe para esse uuid e nCodConta
-    existing_contact = next((c for c in contatos if c["identificacao"]['cCodInt'] == uuid and c["identificacao"]['nCodConta'] == nCodConta), None)
+    existing_contact = next((c for c in contatos if "identificacao" in c and c["identificacao"]['cCodInt'] == uuid and c["identificacao"]['nCodConta'] == nCodConta), None)
     
     if existing_contact:
       nCodContato = existing_contact["identificacao"]['nCod']
@@ -298,7 +298,7 @@ def create_opportunities(file_name):
           continue
         
         # Atualiza lista de contatos para próximos usos
-        contatos.append({"cCodInt": uuid, "nCodConta": nCodConta, "nCod": nCodContato})
+        contatos.append({"identificacao": {"cCodInt": uuid, "nCodConta": nCodConta, "nCod": nCodContato}})
       
       except Exception as e:
         msg = f"[Contato] Linha {line} - Nome: {name} | Conta: {account_name} | Exceção: {e}"
@@ -307,7 +307,7 @@ def create_opportunities(file_name):
         continue
 
     # 3. Verifica se a oportunidade existe para esse nCodConta e nCodContato
-    existing_opportunity = next((o for o in oportunidades if o['identificacao']['nCodConta'] == nCodConta and o['identificacao']['nCodContato'] == nCodContato), None)
+    existing_opportunity = next((o for o in oportunidades if "identificacao" in o and o['identificacao']['nCodConta'] == nCodConta and o['identificacao']['nCodContato'] == nCodContato), None)
     
     if existing_opportunity:
       msg = f"[Oportunidade] Linha {line} - Nome: {name} | Conta: {account_name} | Contato: {nCodContato} | Já existe. Pulando."
