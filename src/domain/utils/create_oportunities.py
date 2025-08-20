@@ -134,6 +134,7 @@ def create_opportunities(file_name):
 
   logging.info(f"Iniciando processamento do arquivo: {file_name}")
   df = pd.read_excel(f'{FOLDER_OPORTUNITY_DIR}/{file_name}', header=None)
+  df = df.dropna(how='all')
 
   if df.empty:
     logging.warning("O arquivo está vazio. Nenhuma oportunidade criada.")
