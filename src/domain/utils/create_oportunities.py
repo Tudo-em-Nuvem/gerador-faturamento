@@ -161,13 +161,23 @@ def create_opportunities(file_name):
   for idx, i in df.iterrows():
     line = idx+1
     name = i["nome"]
-    
-    if type(name) is not str:
-      logging.warning(f"Linha {line}: Nome inválido: {name}. Oportunidade não criada.")
+    vendedor = i["vendedor"]
+
+    # Verifica vendedor vazio
+    if pd.isna(vendedor) or str(vendedor).strip() == '':
+      msg = f"Linha {line}: Vendedor vazio. Oportunidade não criada para '{name}'."
+      logging.warning(msg)
+      erros.append(msg)
       continue
 
-    phone: str = str(i["telefone"])
-    if phone.startswith('55'): phone = phone[2:]
+    # Verifica nome inválido
+    if pd.isna(name) or str(name).strip() == '' or name == 'nan':
+      msg = f"Linha {line}: Nome inválido: {name}. Oportunidade não criada."
+      logging.warning(msg)
+      erros.append(msg)
+      continue
+
+    phone = str(i["telefone"])
     phone_ddd = phone[:2]
     phone_number = phone[2:]
 
@@ -183,11 +193,11 @@ def create_opportunities(file_name):
     else:
       business_name = cnpj_or_company_name
 
-    vendedor = i["vendedor"]
-    id_vendedor = vendedores.get(vendedor.lower(), None)
-    
+    id_vendedor = vendedores.get(str(vendedor).lower(), None)
     if not id_vendedor:
-      logging.warning(f"Linha {line}: Vendedor '{vendedor}' não encontrado. Oportunidade não criada.")
+      msg = f"Linha {line}: Vendedor '{vendedor}' não encontrado. Oportunidade não criada."
+      logging.warning(msg)
+      erros.append(msg)
       continue
 
     account_name = name if not business_name else business_name
